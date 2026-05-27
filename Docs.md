@@ -7,14 +7,15 @@ Java rewrite of the Kindle clippings pipeline, delegating parsing to the Fyodor 
 1. **Bootstrap Project**
    - Create a standard Maven project structure
    - Add dependencies in `pom.xml`: `args4j` (CLI), `jackson-databind` (JSON), `jsoup` (EPUB HTML parsing), `jmustache` (Templating)
-### Todo
-
 2. **Define Domain Models**
    - Create Java Records (or POJOs) for `Clipping`, `TocEntry`, `Heading`, and `HeadingGroup` mapping to Python's `models.py`.
-3. **EPUB Pipeline**
-   - Implement `EpubLoader` to handle zip extraction to a temp directory
+3. **Book Pre-processing & EPUB Pipeline**
+   - Check input file extension: if it is `.azw3`, invoke Calibre (`ebook-convert`) via `ProcessBuilder` to convert it to `.epub`.
+   - Implement `EpubLoader` to handle zip extraction of the EPUB file to a temp directory
    - Implement `TocParser` returning `List<TocEntry>` (parsing `nav.xhtml` or `toc.ncx` via DOM/Jsoup)
    - Implement `LocationResolver` to read EPUB files and map TOC entries to Kindle locations (`List<Heading>`)
+### Todo
+
 4. **Fyodor Subprocess Orchestrator**
    - Implement `FyodorClippingsParser` to act as a bridge
    - Ensure the internal `kindle_headings.erb` is embedded in resources and extracted to a temp dir at runtime
