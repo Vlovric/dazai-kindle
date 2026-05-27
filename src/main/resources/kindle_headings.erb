@@ -1,0 +1,25 @@
+<%#
+  fyodor/kindle_headings.erb
+  --------------------------
+  Custom Fyodor template that emits newline-delimited JSON (one object per line)
+  instead of Markdown. This lets the Python pipeline consume Fyodor's parsed,
+  deduplicated, locale-agnostic clippings without re-implementing any of that logic.
+
+  Install at: ~/.config/fyodor/template.erb
+  Or pass the path via the FYODOR_TEMPLATE env var (see FyodorClippingsParser).
+
+  Each line is a valid JSON object with these fields:
+    book_title  – full title string as Fyodor sees it
+    author      – author string (may be empty)
+    type        – "highlight", "note", "bookmark", or "clip"
+    loc         – integer Kindle location, or null if not parsed
+    page        – integer page number, or null if not parsed
+    date        – raw date string from the clippings file
+    text        – the highlight or note content
+-%>
+<% for entry in regular_entries -%>
+{"book_title":<%= @book.title.to_json %>,"author":<%= @book.author.to_json %>,"type":<%= entry.type.to_s.to_json %>,"loc":<%= entry.loc.nil? ? "null" : entry.loc.to_json %>,"page":<%= entry.page.nil? ? "null" : entry.page.to_json %>,"date":<%= entry.desc.to_json %>,"text":<%= entry.text.to_json %>}
+<% end -%>
+<% for entry in bookmarks -%>
+{"book_title":<%= @book.title.to_json %>,"author":<%= @book.author.to_json %>,"type":"bookmark","loc":<%= entry.loc.nil? ? "null" : entry.loc.to_json %>,"page":<%= entry.page.nil? ? "null" : entry.page.to_json %>,"date":<%= entry.desc.to_json %>,"text":""}
+<% end -%>
