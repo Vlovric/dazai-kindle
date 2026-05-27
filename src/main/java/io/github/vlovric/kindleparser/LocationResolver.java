@@ -1,7 +1,13 @@
 package io.github.vlovric.kindleparser;
 
-import io.github.vlovric.kindleparser.models.Heading;
-import io.github.vlovric.kindleparser.models.TocEntry;
+import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
@@ -10,8 +16,8 @@ import org.jsoup.nodes.TextNode;
 import org.jsoup.select.NodeTraversor;
 import org.jsoup.select.NodeVisitor;
 
-import java.nio.charset.StandardCharsets;
-import java.util.*;
+import io.github.vlovric.kindleparser.models.Heading;
+import io.github.vlovric.kindleparser.models.TocEntry;
 
 /**
  * Resolves logical TOC entries to physical Kindle Locations.
@@ -63,6 +69,14 @@ public class LocationResolver {
             buildFileOffsets();
             offsetsBuilt = true;
         }
+    }
+
+    /**
+     * Debug helper: returns a snapshot of the computed per-file character offsets.
+     */
+    public Map<String, Integer> debugFileOffsets() {
+        ensureOffsetsBuilt();
+        return Collections.unmodifiableMap(new HashMap<>(fileOffsets));
     }
 
     /**

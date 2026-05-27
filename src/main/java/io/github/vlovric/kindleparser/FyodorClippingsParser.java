@@ -6,12 +6,14 @@ import io.github.vlovric.kindleparser.models.Clipping;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.BufferedReader;
 import java.nio.file.*;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
-import java.util.Map;
+import java.util.Locale;
 import java.util.stream.Stream;
 
 public class FyodorClippingsParser {
@@ -46,13 +48,39 @@ public class FyodorClippingsParser {
      * @throws InterruptedException if the fyodor subprocess is interrupted
      */
     public List<Clipping> parse(String titleFilter) throws IOException, InterruptedException {
-        setupUserFyodorTemplate();
+        FyodorParseResult result = parse(titleFilter, null, null, null);
+        return result.clippings();
+    }
 
-        Path tmpDir = Files.createTempDirectory("fyodor_");
-        try {
-            Path outputDir = tmpDir.resolve("out");
+    /**
+     * Debuggable parse entrypoint.
+     *
+     * @param titleFilter optional substring match for clippings (case-insensitive)
+     * @param expectedBookTitle optional expected title (from the EPUB) used to select the correct Fyodor output file
+     * @param outputDirOverride when provided, Fyodor writes output here (instead of a temp directory)
+     * @param debug optional debug artifact writer
+     */
+    public FyodorParseResult parse(
+            String titleFilter,
+            String expectedBookTitle,
+            Path outputDirOverride,
+            DebugArtifacts debug
+    ) throws IOException, InterruptedException {
+        setupUserFyodorTemplate(debug);
+        checkUserFyodorToml(debug);
+
+        Path tmpDir = null;
+        Path outputDir;
+        if (outputDirOverride != null) {
+            outputDir = outputDirOverride;
             Files.createDirectories(outputDir);
+        } else {
+            tmpDir = Files.createTempDirectory("fyodor_");
+            outputDir = tmpDir.resolve("out");
+            Files.createDirectories(outputDir);
+        }
 
+        try {
             ProcessBuilder pb = new ProcessBuilder(
                     fyodorBin,
                     clippingsPath.toAbsolutePath().toString(),
@@ -61,31 +89,72 @@ public class FyodorClippingsParser {
 
             pb.redirectErrorStream(true);
             Process process = pb.start();
-            
-            // Read and print Fyodor output for visibility
-            try (java.io.BufferedReader reader = new java.io.BufferedReader(
-                    new java.io.InputStreamReader(process.getInputStream()))) {
+
+            StringBuilder fyodorOut = new StringBuilder();
+            try (BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()))) {
                 String line;
                 while ((line = reader.readLine()) != null) {
+                    fyodorOut.append(line).append('\n');
                     System.out.println("[Fyodor] " + line);
                 }
             }
 
             int exitCode = process.waitFor();
 
+            if (debug != null) {
+                debug.writeText("04_fyodor_stdout.txt", fyodorOut.toString());
+            }
+
             if (exitCode != 0) {
                 throw new IOException("Fyodor process failed with exit code " + exitCode);
             }
 
-            List<Clipping> clippings = parseOutput(outputDir, titleFilter);
-            
+            List<Path> outputs = listOutputFiles(outputDir);
+            if (debug != null) {
+                debug.writeJson("04_fyodor_out_listing.json", outputs.stream().map(p -> {
+                    try {
+                        return java.util.Map.of(
+                                "file", p.getFileName().toString(),
+                                "size", Files.size(p),
+                                "path", p.toAbsolutePath().toString()
+                        );
+                    } catch (IOException e) {
+                        return java.util.Map.of(
+                                "file", p.getFileName().toString(),
+                                "path", p.toAbsolutePath().toString(),
+                                "error", e.getMessage()
+                        );
+                    }
+                }).toList());
+            }
+
+            Path selected = selectBestOutput(outputs, expectedBookTitle, titleFilter);
+            String selectedBook = selected != null ? readBookTitle(selected) : null;
+
+            if (debug != null) {
+                debug.writeJson("04_selected_book.json", java.util.Map.of(
+                        "selectedFile", selected == null ? null : selected.getFileName().toString(),
+                        "selectedPath", selected == null ? null : selected.toAbsolutePath().toString(),
+                        "selectedBookTitle", selectedBook,
+                        "expectedBookTitle", expectedBookTitle,
+                        "titleFilter", titleFilter
+                ));
+            }
+
+            if (selected == null) {
+                throw new IOException("No Fyodor output files found in " + outputDir);
+            }
+
+            List<Clipping> clippings = parseOutputFile(selected, titleFilter, debug);
+
             // Sort by location safely (handling null locations)
             clippings.sort(Comparator.comparingInt(c -> c.location() == null ? 0 : c.location()));
-            
-            return clippings;
 
+            return new FyodorParseResult(clippings, outputDir, selected, selectedBook);
         } finally {
-            deleteTempDir(tmpDir);
+            if (tmpDir != null) {
+                deleteTempDir(tmpDir);
+            }
         }
     }
 
@@ -95,7 +164,7 @@ public class FyodorClippingsParser {
      *
      * @throws IOException if directory creation or file copying fails
      */
-    private void setupUserFyodorTemplate() throws IOException {
+    private void setupUserFyodorTemplate(DebugArtifacts debug) throws IOException {
         Path configDir = Paths.get(System.getProperty("user.home"), ".config", "fyodor");
         Files.createDirectories(configDir);
 
@@ -106,6 +175,108 @@ public class FyodorClippingsParser {
             }
             Files.copy(is, templatePath, StandardCopyOption.REPLACE_EXISTING);
         }
+
+        if (debug != null) {
+            debug.writeText("04_template_installed_path.txt", templatePath.toAbsolutePath().toString() + "\n");
+        }
+    }
+
+    private void checkUserFyodorToml(DebugArtifacts debug) {
+        try {
+            Path toml = Paths.get(System.getProperty("user.home"), ".config", "fyodor", "fyodor.toml");
+            if (!Files.exists(toml)) {
+                if (debug != null) {
+                    debug.writeText(
+                            "04_fyodor_config_check.txt",
+                            "Missing: " + toml.toAbsolutePath() + "\n\n" +
+                                    "Expected snippet:\n" +
+                                    "[output]\n" +
+                                    "filename = \"%{author_fill} - %{title}.json\"\n"
+                    );
+                }
+                System.err.println("[KindleParser] ⚠️  Missing ~/.config/fyodor/fyodor.toml. Fyodor may not write the expected *.json output filenames.");
+            } else if (debug != null) {
+                String content = Files.readString(toml);
+                debug.writeText("04_fyodor_config_check.txt", "Found: " + toml.toAbsolutePath() + "\n\n" + content);
+            }
+        } catch (Exception ignored) {
+            // Best-effort only
+        }
+    }
+
+    private List<Path> listOutputFiles(Path outputDir) throws IOException {
+        try (Stream<Path> files = Files.list(outputDir)) {
+            return files.filter(Files::isRegularFile)
+                    .sorted(Comparator.comparing(p -> p.getFileName().toString().toLowerCase(Locale.ROOT)))
+                    .toList();
+        }
+    }
+
+    private static String normalizeTitle(String s) {
+        if (s == null) return null;
+        return s.toLowerCase(Locale.ROOT).replaceAll("\\s+", " ").trim();
+    }
+
+    private String readBookTitle(Path file) {
+        try {
+            List<String> lines = Files.readAllLines(file);
+            for (String line : lines) {
+                if (line == null) continue;
+                String trimmed = line.trim();
+                if (trimmed.isEmpty()) continue;
+                com.fasterxml.jackson.databind.JsonNode node = mapper.readTree(trimmed);
+                com.fasterxml.jackson.databind.JsonNode title = node.get("book_title");
+                return title == null || title.isNull() ? null : title.asText(null);
+            }
+            return null;
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+    private int countEntries(Path file) {
+        try (Stream<String> lines = Files.lines(file)) {
+            return (int) lines.filter(l -> l != null && !l.trim().isEmpty()).count();
+        } catch (Exception e) {
+            return 0;
+        }
+    }
+
+    private Path selectBestOutput(List<Path> outputs, String expectedBookTitle, String titleFilter) {
+        if (outputs == null || outputs.isEmpty()) {
+            return null;
+        }
+
+        String expectedNorm = normalizeTitle(expectedBookTitle);
+        String filterNorm = normalizeTitle(titleFilter);
+
+        Path best = null;
+        int bestScore = Integer.MIN_VALUE;
+        int bestCount = -1;
+
+        for (Path file : outputs) {
+            String bookTitle = readBookTitle(file);
+            String bookNorm = normalizeTitle(bookTitle);
+
+            int score = 0;
+            if (expectedNorm != null && bookNorm != null) {
+                if (bookNorm.equals(expectedNorm)) score += 1000;
+                else if (bookNorm.contains(expectedNorm) || expectedNorm.contains(bookNorm)) score += 500;
+            }
+            if (filterNorm != null && !filterNorm.isBlank() && bookNorm != null && bookNorm.contains(filterNorm)) {
+                score += 200;
+            }
+
+            int count = countEntries(file);
+            if (score > bestScore || (score == bestScore && count > bestCount)) {
+                best = file;
+                bestScore = score;
+                bestCount = count;
+            }
+        }
+
+        // If all scores were 0 and there are many outputs, this can still pick the biggest file.
+        return best;
     }
 
     /**
@@ -119,26 +290,29 @@ public class FyodorClippingsParser {
      * @return a list of deserialized and filtered Clipping objects
      * @throws IOException if the output files cannot be read
      */
-    private List<Clipping> parseOutput(Path outputDir, String titleFilter) throws IOException {
+    private List<Clipping> parseOutputFile(Path file, String titleFilter, DebugArtifacts debug) throws IOException {
         List<Clipping> clippings = new ArrayList<>();
-        
-        try (Stream<Path> files = Files.list(outputDir)) {
-            for (Path file : (Iterable<Path>) files::iterator) {
-                if (Files.isRegularFile(file)) {
-                    List<String> lines = Files.readAllLines(file);
-                    for (String line : lines) {
-                        if (line.trim().isEmpty()) continue;
-                        
-                        Clipping clipping = mapper.readValue(line, Clipping.class);
-                        
-                        // Apply the case-insensitive title filter if one was provided
-                        if (titleFilter == null || titleFilter.isBlank() || 
-                            (clipping.bookTitle() != null && 
-                             clipping.bookTitle().toLowerCase().contains(titleFilter.toLowerCase()))) {
-                            clippings.add(clipping);
-                        }
-                    }
+
+        List<String> lines = Files.readAllLines(file);
+        int lineNo = 0;
+        for (String line : lines) {
+            lineNo++;
+            if (line == null || line.trim().isEmpty()) continue;
+
+            try {
+                Clipping clipping = mapper.readValue(line, Clipping.class);
+
+                // Apply the case-insensitive title filter if one was provided
+                if (titleFilter == null || titleFilter.isBlank() ||
+                        (clipping.bookTitle() != null &&
+                                clipping.bookTitle().toLowerCase(Locale.ROOT).contains(titleFilter.toLowerCase(Locale.ROOT)))) {
+                    clippings.add(clipping);
                 }
+            } catch (Exception e) {
+                if (debug != null) {
+                    debug.writeText("04_parse_error_line.jsonl", "file=" + file.toAbsolutePath() + " line=" + lineNo + "\n" + line + "\n");
+                }
+                throw e;
             }
         }
         return clippings;

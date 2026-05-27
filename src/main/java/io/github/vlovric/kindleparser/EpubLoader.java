@@ -32,9 +32,12 @@ public class EpubLoader implements AutoCloseable {
 
     private final Path epubPath;
     private final Path tempDir;
+    private final boolean keepExtracted;
     private String opfRoot = "";
     private List<SpineItem> spine = new ArrayList<>();
     private String tocHref = "";
+    private String bookTitle;
+    private String bookAuthor;
 
     /**
      * Initializes the loader with the given EPUB path and creates a temp directory.
@@ -45,6 +48,18 @@ public class EpubLoader implements AutoCloseable {
     public EpubLoader(Path epubPath) throws IOException {
         this.epubPath = epubPath;
         this.tempDir = Files.createTempDirectory("kindleparser_epub_");
+        this.keepExtracted = false;
+    }
+
+    /**
+     * Initializes the loader with the given EPUB path and extracts into the provided directory.
+     * When keepExtracted is true, close() will not delete the directory.
+     */
+    public EpubLoader(Path epubPath, Path extractDir, boolean keepExtracted) throws IOException {
+        this.epubPath = epubPath;
+        this.tempDir = extractDir;
+        this.keepExtracted = keepExtracted;
+        Files.createDirectories(this.tempDir);
     }
 
     /**
@@ -59,9 +74,40 @@ public class EpubLoader implements AutoCloseable {
         Path opfPath = findOpfPath();
         this.opfRoot = deriveOpfRoot(opfPath);
 
+        parseMetadata(opfPath);
+
         Map<String, String> manifest = parseManifest(opfPath);
         this.spine = parseSpine(opfPath, manifest);
         this.tocHref = findTocHref(manifest);
+    }
+
+    private void parseMetadata(Path opfPath) {
+        try {
+            Document opf = Jsoup.parse(opfPath.toFile(), "UTF-8", "", org.jsoup.parser.Parser.xmlParser());
+            Element metadata = opf.selectFirst("metadata");
+            if (metadata == null) {
+                return;
+            }
+
+            // Be namespace-tolerant: tagName might be "dc:title" or "title" depending on parsing.
+            for (Element el : metadata.children()) {
+                String tag = el.tagName();
+                if (bookTitle == null && (tag.endsWith("title") || tag.equalsIgnoreCase("dc:title"))) {
+                    String t = el.text();
+                    if (t != null && !t.isBlank()) {
+                        bookTitle = t.trim();
+                    }
+                }
+                if (bookAuthor == null && (tag.endsWith("creator") || tag.equalsIgnoreCase("dc:creator"))) {
+                    String a = el.text();
+                    if (a != null && !a.isBlank()) {
+                        bookAuthor = a.trim();
+                    }
+                }
+            }
+        } catch (Exception ignored) {
+            // Metadata is best-effort only.
+        }
     }
 
     /**
@@ -220,6 +266,18 @@ public class EpubLoader implements AutoCloseable {
      */
     public String getOpfRoot() { return opfRoot; }
 
+    public Path getExtractDir() {
+        return tempDir;
+    }
+
+    public String getBookTitle() {
+        return bookTitle;
+    }
+
+    public String getBookAuthor() {
+        return bookAuthor;
+    }
+
     /**
      * Cleans up the temporary directory containing the unzipped EPUB.
      *
@@ -227,6 +285,9 @@ public class EpubLoader implements AutoCloseable {
      */
     @Override
     public void close() throws IOException {
+        if (keepExtracted) {
+            return;
+        }
         if (Files.exists(tempDir)) {
             Files.walkFileTree(tempDir, new SimpleFileVisitor<Path>() {
                 @Override
