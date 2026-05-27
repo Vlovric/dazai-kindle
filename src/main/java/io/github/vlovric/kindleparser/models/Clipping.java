@@ -15,10 +15,20 @@ public record Clipping(
     @JsonProperty("date") String date,
     @JsonProperty("text") String content
 ) {
+    /**
+     * Checks if this clipping represents a highlight.
+     *
+     * @return true if the clipping is a highlight
+     */
     public boolean isHighlight() {
         return type != null && type.equalsIgnoreCase("highlight");
     }
 
+    /**
+     * Checks if this clipping represents a note.
+     *
+     * @return true if the clipping is a note
+     */
     public boolean isNote() {
         return type != null && type.equalsIgnoreCase("note");
     }

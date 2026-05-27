@@ -3,13 +3,23 @@ package io.github.vlovric.kindleparser;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 
+/**
+ * Preprocesses eBook files by managing potential conversion requirements cleanly.
+ * Serves as an interoperability shell to launch Calibre dependencies seamlessly.
+ */
 public class BookPreprocessor {
 
     /**
      * Checks if the input file is .azw3. If so, invokes Calibre's ebook-convert
      * to convert it to .epub in the same directory (or a temp directory) and returns
      * the path to the new .epub file. Otherwise, returns the original path.
+     *
+     * @param inputFile local filesystem path resolving original document
+     * @return Path denoting standardized EPUB reference compatible with `EpubLoader`
+     * @throws IOException when sub-process commands fail execution
+     * @throws InterruptedException if current processing thread blocks
      */
     public static Path preprocess(Path inputFile) throws IOException, InterruptedException {
         String filename = inputFile.getFileName().toString();

@@ -1,31 +1,41 @@
 package io.github.vlovric.kindleparser;
 
+import io.github.vlovric.kindleparser.models.TocEntry;
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
+
 import java.io.IOException;
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.jsoup.Jsoup;
-import org.jsoup.nodes.Document;
-import org.jsoup.nodes.Element;
-
-import io.github.vlovric.kindleparser.models.TocEntry;
-
 /**
- * Maps perfectly to the toc_parser.py hierarchy
- * It checks if the TOC link ends in .html or .xhtml, utilizing Jsoup to traverse the EPUB3 <nav> nodes
- * or correctly handles legacy EPUB2 .ncx files parsing <navMap>
- * It resolves everything sequentially into a standard List<TocEntry>
+ * Parses the EPUB Table of Contents into a flattened list of TocEntry records.
+ * Supports both modern EPUB 3 navigation files (nav.xhtml) and legacy EPUB 2 NCX files (toc.ncx).
  */
 public class TocParser {
 
     private final EpubLoader loader;
 
+    /**
+     * Initializes the TocParser with an active EpubLoader instance.
+     *
+     * @param loader the loader referencing the unzipped EPUB contents
+     */
     public TocParser(EpubLoader loader) {
         this.loader = loader;
     }
 
+    /**
+     * Reads the TOC file denoted by the loader and extracts its hierarchical entries.
+     * Delegates parsing logic gracefully based on the TOC file extension.
+     *
+     * @return an ordered list of Table of Contents entries matching the book's navigation structure
+     * @throws IOException if reading or parsing the TOC fails
+     */
     public List<TocEntry> parse() throws IOException {
         String tocHref = loader.getTocHref();
         if (tocHref == null || tocHref.isEmpty()) {
@@ -46,6 +56,13 @@ public class TocParser {
     // EPUB3 nav.xhtml
     // ------------------------------------------------------------------
 
+    /**
+     * Parses an EPUB 3 navigation document (typically nav.xhtml).
+     * Extracts items sequentially from the primary nav[epub:type=toc] element.
+     *
+     * @param html the string content of the nav file
+     * @return the extracted list of TocEntry records
+     */
     private List<TocEntry> parseNav(String html) {
         Document soup = Jsoup.parse(html);
         // Look for <nav epub:type="toc"> or fallback to first <nav>
@@ -65,6 +82,13 @@ public class TocParser {
         return entries;
     }
 
+    /**
+     * Recursively walks unordered/ordered lists in nav files to build nested TocEntries.
+     *
+     * @param ol       the parent list element
+     * @param entries  the accumulator for storing discovered TocEntries
+     * @param level    the current heading depth
+     */
     private void walkNavOl(Element ol, List<TocEntry> entries, int level) {
         for (Element li : ol.children()) {
             if ("li".equalsIgnoreCase(li.tagName())) {
@@ -81,6 +105,14 @@ public class TocParser {
         }
     }
 
+    /**
+     * Converts a Jsoup link element into a parsed TocEntry.
+     * Extracts the href and cleans up hash anchors.
+     *
+     * @param a     the anchor HTML element
+     * @param level the calculated heading depth
+     * @return a mapped TocEntry record
+     */
     private TocEntry navAnchorToEntry(Element a, int level) {
         String rawHref = URLDecoder.decode(a.attr("href"), StandardCharsets.UTF_8);
         String filePart = rawHref;
@@ -100,6 +132,13 @@ public class TocParser {
     // EPUB2 toc.ncx
     // ------------------------------------------------------------------
 
+    /**
+     * Parses a legacy EPUB 2 NCX file containing the navigation map.
+     * Starts extraction from the primary navMap element.
+     *
+     * @param xml the raw XML string of the NCX metadata
+     * @return the extracted list of TocEntry records
+     */
     private List<TocEntry> parseNcx(String xml) {
         Document soup = Jsoup.parse(xml, "", org.jsoup.parser.Parser.xmlParser());
         List<TocEntry> entries = new ArrayList<>();
@@ -110,6 +149,13 @@ public class TocParser {
         return entries;
     }
 
+    /**
+     * Recursively walks NCX navPoint hierarchies to build TocEntries.
+     *
+     * @param node    the parent navMap or navPoint XML element
+     * @param entries the accumulator list
+     * @param level   the current depth
+     */
     private void walkNcxNavMap(Element node, List<TocEntry> entries, int level) {
         for (Element navPoint : node.children()) {
             if ("navPoint".equalsIgnoreCase(navPoint.tagName())) {
@@ -122,6 +168,14 @@ public class TocParser {
         }
     }
 
+    /**
+     * Converts a single NCX navPoint XML block into a structured TocEntry.
+     * Evaluates relative src paths and decomposes hash links.
+     *
+     * @param navPoint the XML wrapper tag
+     * @param level    the hierarchy depth
+     * @return a mapped TocEntry, or null if essential labels/content are missing
+     */
     private TocEntry ncxNavPointToEntry(Element navPoint, int level) {
         Element textTag = navPoint.selectFirst("navLabel > text"); // ncx usually has navLabel containing text
         if (textTag == null) textTag = navPoint.selectFirst("text"); // fallback to direct text
