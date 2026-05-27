@@ -17,6 +17,7 @@
     date        – raw date string from the clippings file
     text        – the highlight or note content
 -%>
+<% require 'json' -%>
 <% for entry in regular_entries -%>
 {"book_title":<%= @book.title.to_json %>,"author":<%= @book.author.to_json %>,"type":<%= entry.type.to_s.to_json %>,"loc":<%= entry.loc.nil? ? "null" : entry.loc.to_json %>,"page":<%= entry.page.nil? ? "null" : entry.page.to_json %>,"date":<%= entry.desc.to_json %>,"text":<%= entry.text.to_json %>}
 <% end -%>

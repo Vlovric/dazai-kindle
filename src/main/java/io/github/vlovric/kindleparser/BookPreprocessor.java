@@ -3,7 +3,6 @@ package io.github.vlovric.kindleparser;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 
 /**
  * Preprocesses eBook files by managing potential conversion requirements cleanly.
@@ -25,13 +24,13 @@ public class BookPreprocessor {
         String filename = inputFile.getFileName().toString();
         
         if (filename.toLowerCase().endsWith(".azw3")) {
-            System.out.println("Processing AZW3 file. Converting to EPUB using Calibre...");
+            System.out.println("[KindleParser] Processing AZW3 file. Converting to EPUB using Calibre...");
             
             String epubFilename = filename.substring(0, filename.lastIndexOf('.')) + ".epub";
             Path epubPath = inputFile.resolveSibling(epubFilename);
             
             if (Files.exists(epubPath)) {
-                System.out.println("EPUB version already exists. Using " + epubPath);
+                System.out.println("[KindleParser] EPUB version already exists. Using " + epubPath);
                 return epubPath;
             }
 
@@ -41,8 +40,17 @@ public class BookPreprocessor {
                 epubPath.toAbsolutePath().toString()
             );
             
-            pb.inheritIO();
+            pb.redirectErrorStream(true);
             Process process = pb.start();
+            
+            try (java.io.BufferedReader reader = new java.io.BufferedReader(
+                    new java.io.InputStreamReader(process.getInputStream()))) {
+                String line;
+                while ((line = reader.readLine()) != null) {
+                    System.out.println("[Calibre] " + line);
+                }
+            }
+            
             int exitCode = process.waitFor();
             
             if (exitCode != 0) {

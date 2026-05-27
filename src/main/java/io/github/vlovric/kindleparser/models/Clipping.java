@@ -10,11 +10,31 @@ public record Clipping(
     @JsonProperty("book_title") String bookTitle,
     @JsonProperty("author") String author,
     @JsonProperty("type") String type,
-    @JsonProperty("loc") Integer location,
+    @JsonProperty("loc") String rawLocation,
     @JsonProperty("page") Integer page,
     @JsonProperty("date") String date,
     @JsonProperty("text") String content
 ) {
+    /**
+     * Extracts the first integer from the raw location string (e.g. "18-22" -> 18).
+     *
+     * @return the starting location as an Integer, or null if unparseable
+     */
+    public Integer location() {
+        if (rawLocation == null || rawLocation.isBlank() || rawLocation.equals("null")) {
+            return null;
+        }
+        String[] parts = rawLocation.split("-");
+        if (parts.length > 0) {
+            try {
+                return Integer.parseInt(parts[0].trim());
+            } catch (NumberFormatException e) {
+                // Ignore fallback to null
+            }
+        }
+        return null;
+    }
+
     /**
      * Checks if this clipping represents a highlight.
      *

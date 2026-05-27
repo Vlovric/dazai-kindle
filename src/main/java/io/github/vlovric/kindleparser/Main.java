@@ -1,17 +1,18 @@
 package io.github.vlovric.kindleparser;
 
-import io.github.vlovric.kindleparser.models.Clipping;
-import io.github.vlovric.kindleparser.models.Heading;
-import io.github.vlovric.kindleparser.models.HeadingGroup;
-import io.github.vlovric.kindleparser.models.TocEntry;
-import org.kohsuke.args4j.CmdLineException;
-import org.kohsuke.args4j.CmdLineParser;
-import org.kohsuke.args4j.Option;
-
 import java.io.File;
 import java.io.FileWriter;
 import java.nio.file.Path;
 import java.util.List;
+
+import org.kohsuke.args4j.CmdLineException;
+import org.kohsuke.args4j.CmdLineParser;
+import org.kohsuke.args4j.Option;
+
+import io.github.vlovric.kindleparser.models.Clipping;
+import io.github.vlovric.kindleparser.models.Heading;
+import io.github.vlovric.kindleparser.models.HeadingGroup;
+import io.github.vlovric.kindleparser.models.TocEntry;
 
 public class Main {
 
@@ -50,25 +51,25 @@ public class Main {
 
         try {
             Path bookPath = book.toPath();
-            System.out.println("Checking input file...");
+            System.out.println("[KindleParser] Checking input file...");
             bookPath = BookPreprocessor.preprocess(bookPath);
 
-            System.out.println("📖 Loaded: " + bookPath);
+            System.out.println("[KindleParser] 📖 Loaded: " + bookPath);
             
             List<Heading> resolvedHeadings;
             try (EpubLoader loader = new EpubLoader(bookPath)) {
                 loader.open();
                 
-                System.out.println("📑 Parsing table of contents...");
+                System.out.println("[KindleParser] 📑 Parsing table of contents...");
                 TocParser tocParser = new TocParser(loader);
                 List<TocEntry> tocEntries = tocParser.parse();
                 
                 if (tocEntries.isEmpty()) {
-                    System.err.println("⚠️  No TOC entries found. Is there a toc.ncx or nav.xhtml?");
+                    System.err.println("[KindleParser] ⚠️  No TOC entries found. Is there a toc.ncx or nav.xhtml?");
                     System.exit(1);
                 }
 
-                System.out.println("📍 Resolving locations for " + tocEntries.size() + " TOC entries...");
+                System.out.println("[KindleParser] 📍 Resolving locations for " + tocEntries.size() + " TOC entries...");
                 LocationResolver resolver = new LocationResolver(loader);
                 resolvedHeadings = resolver.resolve(tocEntries);
             }
@@ -78,20 +79,20 @@ public class Main {
                 return;
             }
 
-            System.out.println("✂️  Parsing clippings via Fyodor Subprocess: " + clippings.getPath());
+            System.out.println("[KindleParser] ✂️  Parsing clippings via Fyodor Subprocess: " + clippings.getPath());
             FyodorClippingsParser clippingsParser = new FyodorClippingsParser(clippings.toPath());
             List<Clipping> parsedClippings = clippingsParser.parse(title);
 
             if (parsedClippings.isEmpty()) {
                 String suffix = !title.isEmpty() ? " matching '" + title + "'" : "";
-                System.out.println("⚠️  No clippings found" + suffix + ".");
+                System.out.println("[KindleParser] ⚠️  No clippings found" + suffix + ".");
                 System.exit(1);
             }
 
             String matchedBookName = parsedClippings.get(0).bookTitle();
-            System.out.println("   Found " + parsedClippings.size() + " clipping(s) for '" + matchedBookName + "'");
+            System.out.println("[KindleParser]    Found " + parsedClippings.size() + " clipping(s) for '" + matchedBookName + "'");
 
-            System.out.println("🗂️  Grouping under headings...");
+            System.out.println("[KindleParser] 🗂️  Grouping under headings...");
             Grouper grouper = new Grouper();
             List<HeadingGroup> groups = grouper.group(parsedClippings, resolvedHeadings);
 
@@ -112,12 +113,12 @@ public class Main {
             TemplateRenderer renderer = new TemplateRenderer(template.toPath());
             try (FileWriter writer = new FileWriter(finalOutput)) {
                 renderer.render(groups, finalTitle, writer);
-                System.out.println("\n✅ Saved to " + finalOutput.getPath());
-                System.out.println("✅ Done.");
+                System.out.println("\n[KindleParser] ✅ Saved to " + finalOutput.getPath());
+                System.out.println("[KindleParser] ✅ Done.");
             }
 
         } catch (Exception e) {
-            System.err.println("❌ Pipeline Error:");
+            System.err.println("[KindleParser] ❌ Pipeline Error:");
             e.printStackTrace();
             System.exit(1);
         }
