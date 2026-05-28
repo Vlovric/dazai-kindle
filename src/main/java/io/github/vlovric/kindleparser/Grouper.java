@@ -40,12 +40,10 @@ public class Grouper {
             int target = findHeadingIndex(loc, headings);
             groups.get(target).clippings().add(clipping);
         }
-        // Filter out empty groups
+
         List<HeadingGroup> result = new ArrayList<>();
         for (HeadingGroup group : groups.values()) {
-            if (!group.clippings().isEmpty()) {
-                result.add(group);
-            }
+            result.add(group);
         }
         return result;
     }
