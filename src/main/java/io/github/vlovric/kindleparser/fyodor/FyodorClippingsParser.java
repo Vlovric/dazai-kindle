@@ -1,7 +1,9 @@
-package io.github.vlovric.kindleparser;
+package io.github.vlovric.kindleparser.fyodor;
 
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
+
+import io.github.vlovric.kindleparser.DebugArtifacts;
 import io.github.vlovric.kindleparser.models.Clipping;
 
 import java.io.IOException;

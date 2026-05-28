@@ -14,6 +14,9 @@ import org.kohsuke.args4j.CmdLineException;
 import org.kohsuke.args4j.CmdLineParser;
 import org.kohsuke.args4j.Option;
 
+import io.github.vlovric.kindleparser.calibre.BookPreprocessor;
+import io.github.vlovric.kindleparser.fyodor.FyodorClippingsParser;
+import io.github.vlovric.kindleparser.fyodor.FyodorParseResult;
 import io.github.vlovric.kindleparser.models.Clipping;
 import io.github.vlovric.kindleparser.models.Heading;
 import io.github.vlovric.kindleparser.models.HeadingGroup;

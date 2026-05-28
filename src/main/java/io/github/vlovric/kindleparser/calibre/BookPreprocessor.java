@@ -1,4 +1,4 @@
-package io.github.vlovric.kindleparser;
+package io.github.vlovric.kindleparser.calibre;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -11,8 +11,8 @@ import java.nio.file.Path;
 public class BookPreprocessor {
 
     /**
-     * Checks if the input file is .azw3. If so, invokes Calibre's ebook-convert
-     * to convert it to .epub in the same directory (or a temp directory) and returns
+     * Checks if the input file is .azw3 or .mobi. If so, invokes Calibre's ebook-convert
+     * to convert it to .epub in the same directory and returns
      * the path to the new .epub file. Otherwise, returns the original path.
      *
      * @param inputFile local filesystem path resolving original document
@@ -23,8 +23,8 @@ public class BookPreprocessor {
     public static Path preprocess(Path inputFile) throws IOException, InterruptedException {
         String filename = inputFile.getFileName().toString();
         
-        if (filename.toLowerCase().endsWith(".azw3")) {
-            System.out.println("[KindleParser] Processing AZW3 file. Converting to EPUB using Calibre...");
+        if (filename.toLowerCase().endsWith(".azw3") || filename.toLowerCase().endsWith(".mobi")) {
+            System.out.println("[KindleParser] Processing " + filename + " file. Converting to EPUB using Calibre...");
             
             String epubFilename = filename.substring(0, filename.lastIndexOf('.')) + ".epub";
             Path epubPath = inputFile.resolveSibling(epubFilename);

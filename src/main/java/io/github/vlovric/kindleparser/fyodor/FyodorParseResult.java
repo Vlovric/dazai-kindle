@@ -1,4 +1,4 @@
-package io.github.vlovric.kindleparser;
+package io.github.vlovric.kindleparser.fyodor;
 
 import java.nio.file.Path;
 import java.util.List;
