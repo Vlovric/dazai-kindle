@@ -2,123 +2,207 @@
 
 Java rewrite of the Kindle clippings pipeline, delegating parsing to the Fyodor Ruby subprocess while supporting custom Mustache output templates and using Maven + args4j.
 
-### Done
-**Steps**
-1. **Bootstrap Project**
-   - Create a standard Maven project structure
-   - Add dependencies in `pom.xml`: `args4j` (CLI), `jackson-databind` (JSON), `jsoup` (EPUB HTML parsing), `jmustache` (Templating)
-2. **Define Domain Models**
-   - Create Java Records (or POJOs) for `Clipping`, `TocEntry`, `Heading`, and `HeadingGroup` mapping to Python's `models.py`.
-3. **Book Pre-processing & EPUB Pipeline**
-   - Check input file extension: if it is `.azw3`, invoke Calibre (`ebook-convert`) via `ProcessBuilder` to convert it to `.epub`.
-   - Implement `EpubLoader` to handle zip extraction of the EPUB file to a temp directory
-   - Implement `TocParser` returning `List<TocEntry>` (parsing `nav.xhtml` or `toc.ncx` via DOM/Jsoup)
-   - Implement `LocationResolver` to read EPUB files and map TOC entries to Kindle locations (`List<Heading>`)
-4. **Fyodor Subprocess Orchestrator**
-   - Implement `FyodorClippingsParser` to act as a bridge
-   - Ensure the internal `kindle_headings.erb` is embedded in resources and extracted to a temp dir at runtime
-   - Execute `ProcessBuilder` with `fyodor` pointing to the ERB template to get NDJSON back on standard output (exactly how Python does it)
-   - Deserialize the NDJSON output into `Clipping` models via Jackson
-5. **Grouping Module**
-   - Implement `Grouper` mapping `Clipping`s to `Heading`s based on `location` boundaries.
-6. **Templated Output**
-   - Build `TemplateRenderer` utilizing JMustache, taking the user's custom Mustache file as input instead of hardcoded strings
-   - Render the `List<HeadingGroup>` into the requested output
-7. **CLI Shell**
-   - Implement `Main.java` orchestrating the pipeline 
-   - Wire all CLI parameters via `@Option` annotations from `args4j`
-### Todo
+# Refactor ground up
 
+# 1 Args
+- book path (.azw3 ili .epub)
+- clippings path (.txt)
+- template path (.mustache)
+- debug mode
+# 2 AZW3 conversion
+- koristi `ebook-convert`
+- converta iz AZW3 u epub ako je potrebno, vraca path
+- ako je vec epub ili epub postoji onda samo path
+# 3 EPUB extraction i sve osim TOC
+- unzippa epub u temp dir (<mark class="hltr-blue">debug permanent dir</mark>)
+- U `META-INF/container.xml` dobiva <mark class="hltr-red">full-path</mark> za <mark class="hltr-purple">content.opf</mark>:
+```xml
+<?xml version="1.0"?>
+<container version="1.0" xmlns="urn:oasis:names:tc:opendocument:xmlns:container">
+   <rootfiles>
+      <rootfile full-path="content.opf" media-type="application/oebps-package+xml"/>
+      
+   </rootfiles>
+</container>
+    
+```
 
-Plan: Make Pipeline Step-by-Step Debuggable
-Add an explicit “debug/workdir” mode to the CLI so every pipeline stage can persist its intermediate inputs/outputs (extracted EPUB, parsed TOC, resolved headings, Fyodor stdout, Fyodor JSON outputs, selected book file, parsed clippings, grouping report). This turns the current opaque temp-dir + in-memory flow into a reproducible, inspectable run folder you can diff across attempts.
+- iz <mark class="hltr-purple">content.opf</mark> dobiva <mark class="hltr-red">dc:title</mark> i <mark class="hltr-red">dc:creator</mark>
+- **content.opf** struktura:
+```xml
+<package>
+	<metadata>
+		<dc:...>
+		...
+	</metadata>
+	<manifest>
+		<item id="id102" href="text/part0000.html" media type="application/xhtml+xml"/>
+		<item id="id...", href, media-type/>
+		....
+		<item id="ncx" href="toc.ncx" media-type="application/x-dtbncx+xml"/>
+	</manifest>
+	<spine toc="ncx">
+		<itemref idref/>
+		...
+	</spine toc="ncx>
+	<guide>
+	</guide>
+</package>
+```
+- <mark class="hltr-red">item</mark> je dio knjige
+- <mark class="hltr-red">itemref</mark> u spine je poredak kak se cita
 
-Steps
+- item id="ncx" je EPUB2 TOC
+- nav.xhtml bi bio EPUB3 TOC
 
-Add debug/workdir CLI options in Main.java (blocks all later steps)
+- spremam svaki <mark class="hltr-red">item ID sa pravim file pathom</mark>
+- spremam <mark class="hltr-red">poredak spine itemref-ova</mark> kako bi znao poredak
+# 4 TOC parsing
+## .ncx (EPUB2)
+```xml
+<ncx>
+	<head>
+	</head>
+	
+	<docTitle>
+	</docTitle>
+	
+	<navMap>
+		<navPoint> (samo H1)
+			<navLabel>
+				<text>Naziv H1</text>
+			</navLabel>
+			<content src="text/part0003.html"/>
+		</navPoint>
+		
+		<navPoint> (H1 sa H2 u sebi)
+			<navLabel>
+				<text>Naziv H1</text>
+			</navLabel>
+			<content src="text/part0005.html"/>
+			
+			<navPoint>
+				<navLabel>
+					<text>Naziv H2</text>
+				</navLabel>
+				<content src="text/part0005.html#intro1"/>
+			</navPoint
+			
+		</navPoint>
+		
+```
+- <mark class="hltr-red">navPoint</mark> je heading, gledam nesting za razine
+- <mark class="hltr-red">content src</mark> je path, ima # za sekciju
+- - -
+## .xhtml (EPUB3)
+- If `.xhtml`/`.html`: traverse `<nav>` → `<ol>` → `<li>` → `<a>` → extract `href` (file + anchor), level
+- - -
+## Output
+- <mark class="hltr-blue">outputat u debug folder</mark>
+```json
+[
+  TocEntry(title="About the authors", file="text/part0003.html", anchor=null, level=1),
+  TocEntry(title="Introduction", file="text/part0005.html", anchor=null, level=1),
+  TocEntry(title="How to use this guide", file="text/part0005.html", anchor="intro1", level=2)
+]
+```
+- anchor je sekcija sa #, level je heading level prema nestingu
+# 5 TOC lokacija
+## File offset (buildFileOffsets())
+- idem po svakom fileu iz spinea
+- za svaki file uzmem sve charactere
+- tom fileu izracunam offset prema koliko je charactera prethodilo tom fileu
+```
+npr
+- File 1: 5000 chars → offset=0
+- File 2: 3000 chars → offset=5000
+- File 3: 2000 chars → offset=8000
+```
+## Anchor offset (anchorOffset())
+- za svaki file koji ima anchor tj nested headinge
+- uzme offset do tog filea i gleda koliko charactera do tog elementa tj sekcije
+- zbroji to i dobije poziciju headinga nize razine
+```
+npr
+- File offset for `part0005.html` = 5000
+- Text before `<h1 id="intro1">` = 1200 chars
+- Total = 6200
+```
+## Racunanje kindle lokacije
+- kindle lokacija je `(offset / 128) + 1`
+- 128 bajta je 1 kindle location
+- + 1 jer lokacije pocinju na 1, a ne 0
+```
+npr
+- 0-127 bytes → location 1
+- 128-255 bytes → location 2
+- 256-383 bytes → location 3
+```
+## Output
+- `lista (tocEntry, charOffset, location)`
+- <mark class="hltr-blue">outputat u debug folder</mark>
+# 6 Fyodor
+- <mark class="hltr-red">template.erb</mark> se sprema u runtimeu ako ne postoji
+- <mark class="hltr-red">fyodor.toml </mark>mora postojat sa konkretnim: <mark class="hltr-yellow">File name format???</mark>
+```
+[output]
+filename = "????.json"
+```
+- izvrsava se fyodor process sa clippings i output dirom
+- cita se JSON file:
+<mark class="hltr-yellow">koje sve atribute fyodor daje?</mark>
+<mark class="hltr-yellow">radi li to_json?</mark>
+<mark class="hltr-yellow">Koji sve tipovi clippinga postoje?</mark>
+```json
+<%#
+  Each line is a valid JSON object with these fields:
+    book_title  – full title string as Fyodor sees it
+    author      – author string (may be empty)
+    type        – "highlight", "note", "bookmark", or "clip"
+    loc         – integer Kindle location, or null if not parsed
+    page        – integer page number, or null if not parsed
+    date        – raw date string from the clippings file
+    text        – the highlight or note content
+-%>
+<% require 'json' -%>
+<% for entry in regular_entries -%>
+{"book_title":<%= @book.title.to_json %>,"author":<%= @book.author.to_json %>,"type":<%= entry.type.to_s.to_json %>,"loc":<%= entry.loc.nil? ? "null" : entry.loc.to_json %>,"page":<%= entry.page.nil? ? "null" : entry.page.to_json %>,"date":<%= entry.desc.to_json %>,"text":<%= entry.text.to_json %>}
+<% end -%>
+<% for entry in bookmarks -%>
+{"book_title":<%= @book.title.to_json %>,"author":<%= @book.author.to_json %>,"type":"bookmark","loc":<%= entry.loc.nil? ? "null" : entry.loc.to_json %>,"page":<%= entry.page.nil? ? "null" : entry.page.to_json %>,"date":<%= entry.desc.to_json %>,"text":""}
+<% end -%>
+```
+- <mark class="hltr-yellow">ucitat parsean .json prema filenameu</mark>!!
+- <mark class="hltr-blue">U debug spremit ovaj json output da je readable</mark>
+- **entry.loc** daje `"loc": "1847-1852"` ili `"loc": "1847"`
+## Output
+- Svaka linija je `Clipping(book_title, author, type, loc, page, date, text)`
+- za loc se uzima samo prvi broj ako je dan raspon iz fyodora
+# 7 Grupiranje
+- imam listu `(tocEntry, charOffset, location)`
+- imam listu `Clipping(book_title, author, type, loc, page, date, text)`
+- Stvorit mapu `HeadingGroup(heading, clippings)` <mark class="hltr-yellow">gdje je clippings lista ig?</mark>
+- <mark class="hltr-yellow">Ne droppat empty groups</mark>
+- <mark class="hltr-blue">exportat objekte u readable format</mark>
+# 8 Template renderanje
+- <mark class="hltr-yellow">koje atribute mogu koristit u .mustache templateu?</mark>
+- <mark class="hltr-yellow">Kak uopce .mustache funkcionira??</mark>
+<mark class="hltr-yellow">- Koristit nesto drugo ako mi treba vise logike?</mark>
 
-Add options:
---debug-dir (directory where a single run folder is created, default ./debug-runs)
---keep-workdir (do not delete intermediate directories)
---workdir (optional explicit work directory; when provided, reuse it)
---dump-stage (optional, e.g. toc, headings, fyodor, grouping, all; or keep it simple as just --debug)
-In run(), compute a per-run folder like debug-runs/run-YYYYMMDD-HHMMSS/ and print it once at startup.
-Create a small debug artifact writer utility (depends on 1)
-
-Add a class like DebugArtifacts with helpers:
-write JSON (pretty), text, and directory copies
-Standardize file names with stage numbers so you can inspect in order.
-Make EPUB extraction inspectable (depends on 1)
-
-Problem: EpubLoader.java always extracts to a temp folder and deletes it in close().
-Approach:
-Add a constructor overload that extracts into {runDir}/epub-extracted/, or
-Add “keep temp dir” behavior and record its path into the run folder.
-Keep artifacts:
-01_epub_extracted_path.txt and/or the extracted folder
-01_spine.json, opfRoot, tocHref
-Dump TOC parsing output (depends on 1; parallel with step 5)
-
-After TocParser.parse() (in Main), write:
-02_toc_entries.json (the List<TocEntry>)
-02_toc_source.txt (tocHref + resolved toc path)
-Dump location resolution output (depends on 1; parallel with step 4)
-
-After LocationResolver.resolve() (in Main), write:
-03_resolved_headings.json (title, level, file, anchor, charOffset, kindleLocation)
-Optional but very useful:
-export fileOffsets to 03_file_offsets.json
-record missing anchors to 03_missing_anchors.txt
-Make Fyodor step deterministic + inspectable (depends on 1)
-
-Stop using a temp output dir when debugging; instead:
-use {runDir}/fyodor-out/ as the Fyodor output directory
-Capture Fyodor output:
-04_fyodor_stdout.txt (verbatim), while still prefix-printing [Fyodor] to console
-Validate user config early:
-check ~/.config/fyodor/fyodor.toml; if missing/misconfigured, warn and write 04_fyodor_config_check.txt with the required snippet:
-[output] filename = "%{author_fill} - %{title}.json"
-Template management stays as you want:
-copy the bundled template to ~/.config/fyodor/template.erb (overwrite) and write 04_template_installed_path.txt
-Select the correct book JSON produced by Fyodor (depends on 6)
-
-Problem: Fyodor can output multiple book files; parsing all mixes books and makes grouping nonsense.
-Add an explicit selection step:
-Extend EpubLoader.java to parse OPF metadata (dc:title, dc:creator) and dump 01_epub_metadata.json
-List {runDir}/fyodor-out/* and write 04_fyodor_out_listing.json (filename, size, mtime)
-Pick target file by a simple, debuggable heuristic:
-prefer the file whose NDJSON book_title best matches EPUB title (case-insensitive, normalized)
-tie-break by “most entries”
-fallback: user-provided --title
-if still ambiguous: fail with candidates and write 04_selection_failure.json
-Record selection: 04_selected_book.json
-Improve parse error diagnostics (depends on 6)
-
-When JSON parsing fails, include file + line number in the exception and write the offending line to 04_parse_error_line.jsonl.
-Dump sanity stats for the selected book:
-05_clippings_stats.json (counts by type, min/max location, null-loc count)
-05_clippings_sample.json (first N entries)
-Dump grouping results (depends on 5 and 7)
-
-After grouping, write:
-06_grouping_summary.json (heading title/location → count)
-06_before_first_bucket.json (the BEFORE_FIRST bucket)
-Define a repeatable debugging workflow (depends on 1–9)
-
-Run with: --debug-dir ./debug-runs --keep-workdir
-Inspect in order:
-01_epub_metadata.json + extracted EPUB folder
-02_toc_entries.json
-03_resolved_headings.json
-04_fyodor_stdout.txt + fyodor-out/*.json
-04_selected_book.json
-05_clippings_stats.json
-06_grouping_summary.json
-Relevant files
-
-Main.java — flags + per-stage dumps
-EpubLoader.java — keep extraction dir + OPF metadata parsing
-LocationResolver.java — optional debug exports
-FyodorClippingsParser.java — capture stdout, list outputs, select correct JSON, keep dirs
-Grouper.java — grouping summary dump (or do it in Main)
-template.erb — keep deterministic NDJSON (including the require 'json' fix)
+Template treba ici:
+```
+# Naslov H1
+>[!kindle-quote] Highlight
+>Ako note slijedi highlight onda ide ovdje
+## Naslov H2
+>[!kindle-quote Highlight]
+> prazan body ako je sljedece Highlight
+...
+>... 
+```
+# 8 Debug flag sto sve treba
+- unzippani epub smjestit u permanent debug directory u projektu
+- output TOC parsinga i kao objekt to string i kao markdown da mogu prekontrolirat lako
+- outputat listu `lista (tocEntry, charOffset, location)` TOC lokacija kao objekt to string
+- spremit fyodor json kao readable json da provjerim
+- outputat grupirane clippinge sa headingsima kao objekt to string

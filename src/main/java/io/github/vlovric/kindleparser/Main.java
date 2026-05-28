@@ -18,6 +18,7 @@ import io.github.vlovric.kindleparser.models.Clipping;
 import io.github.vlovric.kindleparser.models.Heading;
 import io.github.vlovric.kindleparser.models.HeadingGroup;
 import io.github.vlovric.kindleparser.models.TocEntry;
+import io.github.vlovric.kindleparser.toc.TocParserResolver;
 
 public class Main {
 
@@ -124,8 +125,8 @@ public class Main {
                 }
                 
                 System.out.println("[KindleParser] 📑 Parsing table of contents...");
-                TocParser tocParser = new TocParser(loader);
-                List<TocEntry> tocEntries = tocParser.parse();
+                TocParserResolver tocResolver = new TocParserResolver(loader);
+                List<TocEntry> tocEntries = tocResolver.parse();
 
                 if (dbg != null) {
                     dbg.writeJson("02_toc_entries.json", tocEntries);

@@ -1,14 +1,14 @@
 package io.github.vlovric.kindleparser;
 
-import io.github.vlovric.kindleparser.models.Clipping;
-import io.github.vlovric.kindleparser.models.Heading;
-import io.github.vlovric.kindleparser.models.HeadingGroup;
-import io.github.vlovric.kindleparser.models.TocEntry;
-
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+
+import io.github.vlovric.kindleparser.models.Clipping;
+import io.github.vlovric.kindleparser.models.Heading;
+import io.github.vlovric.kindleparser.models.HeadingGroup;
+import io.github.vlovric.kindleparser.models.TocEntry;
 
 /**
  * Groups Clipping objects under the correct Heading based on location bounds.
@@ -23,8 +23,7 @@ public class Grouper {
     );
 
     /**
-     * Assigns each Clipping to the last Heading whose location is <=
-     * the clipping's location, producing a list of HeadingGroups.
+     * Assigns each Clipping to the last Heading whose location is <= the clipping's location, producing a list of HeadingGroups.
      * Empty groups (headings with no clippings) are excluded from the output.
      *
      * @param clippings the list of clippings parsed from MyClippings.txt
@@ -32,6 +31,7 @@ public class Grouper {
      * @return a list of populated HeadingGroups
      */
     public List<HeadingGroup> group(List<Clipping> clippings, List<Heading> headings) {
+        // each heading gets ordered by its index in the total order of headings as they are ordered
         Map<Integer, HeadingGroup> groups = makeGroups(headings);
 
         for (Clipping clipping : clippings) {
@@ -40,7 +40,7 @@ public class Grouper {
             int target = findHeadingIndex(loc, headings);
             groups.get(target).clippings().add(clipping);
         }
-
+        // Filter out empty groups
         List<HeadingGroup> result = new ArrayList<>();
         for (HeadingGroup group : groups.values()) {
             if (!group.clippings().isEmpty()) {
