@@ -18,13 +18,14 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
 /**
- * Responsible for opening an EPUB file, extracting it to a temporary directory,
+ * Responsible for opening an EPUB file, extracting it to a temporary directory (or specified directory for debugging),
  * and exposing its internal structure (OPF root, spine order, TOC location).
  */
 public class EpubLoader implements AutoCloseable {
 
     /**
      * Represents a single file inside the EPUB spine.
+     * The spine defines the sequential reading order of the book's content.
      * @param id The manifest ID
      * @param href The relative path to the file
      */

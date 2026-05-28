@@ -4,6 +4,7 @@ import java.io.File;
 import java.io.FileWriter;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
@@ -21,6 +22,7 @@ import io.github.vlovric.kindleparser.models.Clipping;
 import io.github.vlovric.kindleparser.models.Heading;
 import io.github.vlovric.kindleparser.models.HeadingGroup;
 import io.github.vlovric.kindleparser.models.TocEntry;
+import io.github.vlovric.kindleparser.toc.LocationResolver;
 import io.github.vlovric.kindleparser.toc.TocParserResolver;
 
 public class Main {
@@ -46,15 +48,6 @@ public class Main {
     @Option(name = "--debug", usage = "Write intermediate artifacts to a run directory")
     private boolean debug = false;
 
-    @Option(name = "--debug-dir", usage = "Directory for debug runs (default: ./debug-runs)")
-    private File debugDir = new File("./debug-runs");
-
-    @Option(name = "--workdir", usage = "Explicit work directory to reuse for debugging")
-    private File workdir;
-
-    @Option(name = "--keep-workdir", usage = "Keep intermediate directories (implied by --debug)")
-    private boolean keepWorkdir = false;
-
     public static void main(String[] args) {
         new Main().run(args);
     }
@@ -71,30 +64,17 @@ public class Main {
         }
 
         try {
-            boolean debugEnabled = debug || workdir != null;
+            boolean debugEnabled = debug;
             DebugArtifacts dbg = null;
             Path runDir = null;
 
             if (debugEnabled) {
-                keepWorkdir = true;
-                if (workdir != null) {
-                    runDir = workdir.toPath();
-                } else {
-                    String ts = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMdd-HHmmss"));
-                    runDir = debugDir.toPath().resolve("run-" + ts);
-                }
+                String ts = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMdd-HHmmss"));
+                runDir = Paths.get("./debug-runs", "run-" + ts);
                 Files.createDirectories(runDir);
+                
                 dbg = new DebugArtifacts(runDir);
                 System.out.println("[KindleParser] 🧪 Debug run dir: " + runDir.toAbsolutePath());
-
-                Map<String, Object> argDump = new HashMap<>();
-                argDump.put("book", book == null ? null : book.getPath());
-                argDump.put("clippings", clippings == null ? null : clippings.getPath());
-                argDump.put("title", title);
-                argDump.put("template", template == null ? null : template.getPath());
-                argDump.put("output", output == null ? null : output.getPath());
-                argDump.put("headingsOnly", headingsOnly);
-                dbg.writeJson("00_run_args.json", argDump);
             }
 
             Path bookPath = book.toPath();

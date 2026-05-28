@@ -1,4 +1,4 @@
-package io.github.vlovric.kindleparser;
+package io.github.vlovric.kindleparser.toc;
 
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
@@ -16,6 +16,7 @@ import org.jsoup.nodes.TextNode;
 import org.jsoup.select.NodeTraversor;
 import org.jsoup.select.NodeVisitor;
 
+import io.github.vlovric.kindleparser.EpubLoader;
 import io.github.vlovric.kindleparser.models.Heading;
 import io.github.vlovric.kindleparser.models.TocEntry;
 
