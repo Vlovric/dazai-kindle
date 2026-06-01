@@ -1,11 +1,60 @@
 # KindleParser – Technical Documentation
 
 ## High-Level Flow
-TODO NAPRAVIT MERMAID DIJAGRAM
+```mermaid
+flowchart TD
+    A[Start] --> B{Book format}
+    B -->|.azw3 / .mobi| C["Calibre:<br>ebook-convert to .epub"]
+    B -->|.epub| D["EpubLoader:<br>extract EPUB"]
 
+    C --> D
+    D --> E["Parse META-INF/container.xml<br>-> OPF path"]
+    E --> F["Parse content.opf:<br>manifest, spine, metadata"]
+    F --> G["TocParserResolver:<br>detect TOC type"]
+    G --> H{Extension}
+    H -->|.ncx| I["NcxTocParser:<br>walk navMap"]
+    H -->|.xhtml/.html| J["XhtmlTocParser:<br>walk nav element"]
+    I --> K["List of<br>TocEntry"]
+    J --> K
+
+    K --> L{Calibration<br>provided?}
+    L -->|Yes| M["LocationResolver (uncalibrated)<br>-> byte offsets"]
+    M --> N["Fit linear regression:<br>location vs byte offset"]
+    N --> O["Calibrated<br>bytesPerLocation & bias"]
+    L -->|No| P["Exit<br>(calibration mandatory)"]
+
+    O --> Q["LocationResolver<br>with fitted parameters"]
+    K --> Q
+    Q --> R["List of Heading<br>with resolved Kindle locations"]
+
+    S["My Clippings.txt"] --> T["Fyodor subprocess"]
+    T --> U["Read JSON lines<br>-> Clipping records"]
+    U --> V["Filter by --title /<br>expected book title"]
+
+    R --> W["Grouper:<br>binary search per clipping"]
+    V --> W
+    W --> X["List of<br>HeadingGroup"]
+
+    X --> Y["TemplateRenderer:<br>FreeMarker"]
+    Y --> Z["Output .md file"]
+
+    subgraph Debug["Debug Mode"]
+        D2["Debug artifacts"]
+        Q2["Write JSON/text<br>to debug-runs/"]
+    end
+
+    Q -.-> Q2
+    T -.-> Q2
+    W -.-> Q2
+
+    style N fill:#f9f,stroke:#333,stroke-width:2px
+    style Q fill:#bbf,stroke:#333,stroke-width:2px
+    style T fill:#bfb,stroke:#333,stroke-width:2px
+
+    linkStyle default stroke:#FF6B6B,stroke-width:2px
+```
 
 ## Core Classes
-TODO zasto "LocationResolver" supports linear calibration, zar nije mandatory?
 
 | Class | Responsibility |
 |-------|----------------|
@@ -49,14 +98,13 @@ TODO zasto "LocationResolver" supports linear calibration, zar nije mandatory?
 **Implementation:** Each clipping’s `location` (start of range) is compared against the sorted list of heading locations using binary search. The last heading with location ≤ clipping location wins. Clippings with `location=null` go to the “(Before first heading)” group.
 
 ## Data Flow (Step‑by‑Step)
-TODO zasto "Calibration (if provided)" ako je mandatory?
 
 1. **Preprocess book** – convert to EPUB if needed.  
 2. **Extract EPUB** – unzip to temp directory (or debug dir).  
 3. **Locate OPF** – parse `META-INF/container.xml` → `rootfile full-path`.  
 4. **Parse manifest & spine** – build map of ID → href, spine item order.  
 5. **Parse TOC** – read `toc.ncx` or `nav.xhtml` → `List<TocEntry>`.  
-6. **Calibration (if provided)** – for each calibration point, compute raw byte offset using an **uncalibrated** resolver, then fit `location = floor(offset/bpl + bias) + 1`.  
+6. **Calibration** – for each calibration point, compute raw byte offset using an **uncalibrated** resolver, then fit `location = floor(offset/bpl + bias) + 1`.  
 7. **Resolve headings** – build file offsets, compute byte offset for each TOC entry, convert to location using fitted or default parameters.  
 8. **Run Fyodor** – subprocess writes JSON lines; select best file (by expected title + filter); deserialise to `Clipping` objects.  
 9. **Group** – binary search to assign clippings to headings.  
