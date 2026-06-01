@@ -2,14 +2,18 @@ package io.github.vlovric.kindleparser;
 
 import java.io.File;
 import java.io.FileWriter;
+import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.kohsuke.args4j.CmdLineException;
 import org.kohsuke.args4j.CmdLineParser;
@@ -47,6 +51,9 @@ public class Main {
 
     @Option(name = "--debug", usage = "Write intermediate artifacts to a run directory")
     private boolean debug = false;
+
+    @Option(name = "--calibrate", usage = "Path to a calibration file containing lines like 'Heading - 123' or 'Heading: 123'. Applies calibration for this run only")
+    private File calibrate;
 
     public static void main(String[] args) {
         new Main().run(args);
@@ -122,7 +129,30 @@ public class Main {
                 }
 
                 System.out.println("[KindleParser] 📍 Resolving locations for " + tocEntries.size() + " TOC entries...");
-                LocationResolver resolver = new LocationResolver(loader);
+                LocationResolver resolver;
+
+                if (calibrate != null) {
+                    CalibrationFit fit = fitCalibrationFromFile(calibrate.toPath(), loader, tocEntries);
+                    resolver = new LocationResolver(loader, fit.bytesPerLocation(), fit.locationBias());
+                    System.out.println("[KindleParser] 📐 Calibration fitted from file (bytesPerLocation="
+                            + fit.bytesPerLocation() + ", bias=" + fit.locationBias() + ", points=" + fit.pointsUsed() + ")");
+                } else {
+                    Double bytesPerLocation = readDoubleProperty("kindleparser.bytesPerLocation");
+                    Double locationBias = readDoubleProperty("kindleparser.locationBias");
+                    if (bytesPerLocation != null || locationBias != null) {
+                        resolver = new LocationResolver(
+                                loader,
+                                bytesPerLocation == null ? 128.0 : bytesPerLocation,
+                                locationBias == null ? 0.0 : locationBias
+                        );
+                        System.out.println("[KindleParser] 📐 Location calibration enabled (bytesPerLocation="
+                                + (bytesPerLocation == null ? 128.0 : bytesPerLocation)
+                                + ", bias=" + (locationBias == null ? 0.0 : locationBias) + ")");
+                    } else {
+                        resolver = new LocationResolver(loader);
+                    }
+                }
+
                 resolvedHeadings = resolver.resolve(tocEntries);
 
                 if (dbg != null) {
@@ -242,5 +272,149 @@ public class Main {
             String indent = "  ".repeat(Math.max(0, h.level() - 1));
             System.out.printf("%-12d h%-7d %s%s%n", h.location(), h.level(), indent, h.title());
         }
+    }
+
+    private static Double readDoubleProperty(String key) {
+        String raw = System.getProperty(key);
+        if (raw == null || raw.isBlank()) {
+            raw = System.getenv(key);
+        }
+        if (raw == null || raw.isBlank()) {
+            return null;
+        }
+        try {
+            return Double.parseDouble(raw.trim());
+        } catch (Exception ignored) {
+            return null;
+        }
+    }
+
+    private record CalibrationFit(double bytesPerLocation, double locationBias, int pointsUsed) {}
+
+    private static CalibrationFit fitCalibrationFromFile(Path file, EpubLoader loader, List<TocEntry> tocEntries) throws IOException {
+        Map<String, Integer> targets = parseCalibrationFile(file);
+        if (targets.isEmpty()) {
+            throw new IOException("Calibration file has no usable 'Heading - Location' entries: " + file);
+        }
+
+        LocationResolver uncalibrated = new LocationResolver(loader);
+
+        // Build points: x = byteOffset, y = (kindleLocation - 1)
+        List<Double> xs = new java.util.ArrayList<>();
+        List<Double> ys = new java.util.ArrayList<>();
+
+        for (Map.Entry<String, Integer> e : targets.entrySet()) {
+            String wantedTitle = e.getKey();
+            int wantedLoc = e.getValue();
+            TocEntry match = findTocEntry(tocEntries, wantedTitle);
+            if (match == null) {
+                System.out.println("[KindleParser] ⚠️  Calibration title not found in TOC: '" + wantedTitle + "'");
+                continue;
+            }
+            Integer byteOffset = uncalibrated.byteOffsetOf(match);
+            if (byteOffset == null) {
+                System.out.println("[KindleParser] ⚠️  Calibration anchor/file not resolvable for: '" + match.title() + "'");
+                continue;
+            }
+            xs.add((double) byteOffset);
+            ys.add((double) (wantedLoc - 1));
+        }
+
+        if (xs.size() < 2) {
+            throw new IOException("Need at least 2 matched calibration points; got " + xs.size());
+        }
+
+        // Least squares fit: y ≈ m*x + c
+        int n = xs.size();
+        double mx = xs.stream().mapToDouble(Double::doubleValue).average().orElse(0);
+        double my = ys.stream().mapToDouble(Double::doubleValue).average().orElse(0);
+
+        double num = 0;
+        double den = 0;
+        for (int i = 0; i < n; i++) {
+            double dx = xs.get(i) - mx;
+            double dy = ys.get(i) - my;
+            num += dx * dy;
+            den += dx * dx;
+        }
+        if (den == 0) {
+            throw new IOException("Calibration points have zero variance in byte offsets (cannot fit)");
+        }
+
+        double m = num / den;
+        if (m <= 0) {
+            throw new IOException("Calibration fit produced non-positive slope (m=" + m + ")");
+        }
+
+        double c = my - (m * mx);
+        double bytesPerLocation = 1.0 / m;
+        double locationBias = c;
+        return new CalibrationFit(bytesPerLocation, locationBias, xs.size());
+    }
+
+    private static Map<String, Integer> parseCalibrationFile(Path file) throws IOException {
+        List<String> lines = Files.readAllLines(file);
+        Map<String, Integer> out = new LinkedHashMap<>();
+
+        // Supports:
+        //   Heading - 123
+        //   Heading: 123
+        //   Heading — 123
+        Pattern p = Pattern.compile("^\\s*(.+?)\\s*(?:-|:|—|–)\\s*(\\d+)\\s*$");
+
+        for (String line : lines) {
+            if (line == null) continue;
+            String trimmed = line.trim();
+            if (trimmed.isEmpty()) continue;
+            if (trimmed.startsWith("#")) continue;
+
+            Matcher m = p.matcher(trimmed);
+            if (!m.matches()) {
+                continue;
+            }
+            String title = m.group(1).trim();
+            int loc = Integer.parseInt(m.group(2));
+            if (!title.isEmpty() && loc > 0) {
+                out.put(title, loc);
+            }
+        }
+        return out;
+    }
+
+    private static TocEntry findTocEntry(List<TocEntry> tocEntries, String wantedTitle) {
+        String wantedNorm = normalizeTitle(wantedTitle);
+        if (wantedNorm.isEmpty()) {
+            return null;
+        }
+
+        TocEntry exact = null;
+        TocEntry prefix = null;
+        TocEntry contains = null;
+
+        for (TocEntry e : tocEntries) {
+            String candNorm = normalizeTitle(e.title());
+            if (candNorm.equals(wantedNorm)) {
+                exact = e;
+                break;
+            }
+            if (prefix == null && candNorm.startsWith(wantedNorm)) {
+                prefix = e;
+            }
+            if (contains == null && candNorm.contains(wantedNorm)) {
+                contains = e;
+            }
+        }
+
+        if (exact != null) return exact;
+        if (prefix != null) return prefix;
+        return contains;
+    }
+
+    private static String normalizeTitle(String s) {
+        if (s == null) return "";
+        String lower = s.toLowerCase();
+        // Replace any non-alphanumeric with spaces; collapse whitespace.
+        String cleaned = lower.replaceAll("[^a-z0-9]+", " ").trim();
+        return cleaned.replaceAll("\\s+", " ");
     }
 }

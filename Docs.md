@@ -110,27 +110,27 @@ Java rewrite of the Kindle clippings pipeline, delegating parsing to the Fyodor 
 # 5 TOC lokacija
 ## File offset (buildFileOffsets())
 - idem po svakom fileu iz spinea
-- za svaki file uzmem sve charactere
-- tom fileu izracunam offset prema koliko je charactera prethodilo tom fileu
+- za svaki file uzmem raw UTF-8 byte size (cijeli XHTML/HTML, ukljucujuci tagove)
+- tom fileu izracunam offset prema koliko je bytova prethodilo tom fileu
 ```
 npr
-- File 1: 5000 chars → offset=0
-- File 2: 3000 chars → offset=5000
-- File 3: 2000 chars → offset=8000
+- File 1: 5000 bytes → offset=0
+- File 2: 3000 bytes → offset=5000
+- File 3: 2000 bytes → offset=8000
 ```
 ## Anchor offset (anchorOffset())
 - za svaki file koji ima anchor tj nested headinge
-- uzme offset do tog filea i gleda koliko charactera do tog elementa tj sekcije
+- uzme offset do tog filea i gleda koliko UTF-8 bytova je prije anchor elementa (id/name/xml:id)
 - zbroji to i dobije poziciju headinga nize razine
 ```
 npr
 - File offset for `part0005.html` = 5000
-- Text before `<h1 id="intro1">` = 1200 chars
+- Bytes before `<h1 id="intro1">` = 1200
 - Total = 6200
 ```
 ## Racunanje kindle lokacije
-- kindle lokacija je `(offset / 128) + 1`
-- 128 bajta je 1 kindle location
+- kindle lokacija je `floor((offset / bytesPerLocation) + bias) + 1`
+- default je `bytesPerLocation=128`, `bias=0`
 - + 1 jer lokacije pocinju na 1, a ne 0
 ```
 npr
@@ -141,6 +141,16 @@ npr
 ## Output
 - `lista (tocEntry, charOffset, location)`
 - <mark class="hltr-blue">outputat u debug folder</mark>
+
+## Calibration (per-run)
+
+Ako lokacije driftaju (npr. dobijes -100+ razlike kasnije u knjizi), mozes fit-at linearnu kalibraciju iz par toc tocaka i primijeniti je samo za taj run.
+
+- CLI: `--calibrate <file>`
+- Format file-a (svaki red): `Heading - Location` ili `Heading: Location`
+- Komentari sa `#` i prazni redovi se ignoriraju.
+
+Program ce iz tih tocaka izracunati `bytesPerLocation` i `bias` i primijeniti ih na sve headinge za taj run.
 # 6 Fyodor
 - <mark class="hltr-red">template.erb</mark> se sprema u runtimeu ako ne postoji
 - <mark class="hltr-red">fyodor.toml </mark>mora postojat sa konkretnim: <mark class="hltr-yellow">File name format???</mark>
@@ -206,3 +216,30 @@ Template treba ici:
 - outputat listu `lista (tocEntry, charOffset, location)` TOC lokacija kao objekt to string
 - spremit fyodor json kao readable json da provjerim
 - outputat grupirane clippinge sa headingsima kao objekt to string
+
+# 80,000 Hours real locations (run-20260531-205010)
+
+About the authors - 24
+Introduction - 300
+Chapter 1 - 356
+Chapter 2 - 631
+Chapter 3 - 753
+Chapter 4 - 927
+Chapter 5 - 1059
+Chapter 6 - 1404
+Chapter 7 - 1809
+Chapter 8 - 2266
+Chapter 9 - 2641
+Chapter 10 - 2902
+Chapter 11 - 3217
+
+# Thinking in Systems_ A Primer real locations (run-20260531-210716)
+
+Front Matter - 32
+A Note from the Author - 121
+A Note from the Editor - 143
+Introduction: The System Lens - 200
+Part One - 330
+Part Two - 1243
+Part Three - 2463
+Appendix - 3207

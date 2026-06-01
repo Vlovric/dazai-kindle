@@ -7,14 +7,8 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-
-import org.jsoup.Jsoup;
-import org.jsoup.nodes.Document;
-import org.jsoup.nodes.Element;
-import org.jsoup.nodes.Node;
-import org.jsoup.nodes.TextNode;
-import org.jsoup.select.NodeTraversor;
-import org.jsoup.select.NodeVisitor;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import io.github.vlovric.kindleparser.EpubLoader;
 import io.github.vlovric.kindleparser.models.Heading;
@@ -22,14 +16,17 @@ import io.github.vlovric.kindleparser.models.TocEntry;
 
 /**
  * Resolves logical TOC entries to physical Kindle Locations.
- * Does so by calculating character offsets across all HTML texts in the spine,
+ * Does so by calculating byte offsets across all spine XHTML resources,
  * mapping those distances mathematically based on Kindle's format assumption of 128 bytes/location.
  */
 public class LocationResolver {
 
-    private static final int KINDLE_BYTES_PER_LOCATION = 128;
+    private static final double DEFAULT_BYTES_PER_LOCATION = 128.0;
+    private static final double DEFAULT_LOCATION_BIAS = 0.0;
 
     private final EpubLoader loader;
+    private final double bytesPerLocation;
+    private final double locationBias;
     private final Map<String, Integer> fileOffsets = new HashMap<>();
     private boolean offsetsBuilt = false;
 
@@ -40,6 +37,18 @@ public class LocationResolver {
      */
     public LocationResolver(EpubLoader loader) {
         this.loader = loader;
+        this.bytesPerLocation = DEFAULT_BYTES_PER_LOCATION;
+        this.locationBias = DEFAULT_LOCATION_BIAS;
+    }
+
+    /**
+     * Initializes the resolver with an optional linear calibration:
+     * location ≈ floor((byteOffset / bytesPerLocation) + locationBias) + 1
+     */
+    public LocationResolver(EpubLoader loader, double bytesPerLocation, double locationBias) {
+        this.loader = loader;
+        this.bytesPerLocation = bytesPerLocation > 0 ? bytesPerLocation : DEFAULT_BYTES_PER_LOCATION;
+        this.locationBias = locationBias;
     }
 
     /**
@@ -63,6 +72,29 @@ public class LocationResolver {
     }
 
     /**
+     * Resolves a TOC entry to its global byte offset across the spine.
+     * Returns null if the entry file is not part of the spine offsets or the anchor cannot be located.
+     */
+    public Integer byteOffsetOf(TocEntry entry) {
+        ensureOffsetsBuilt();
+        Integer fileOffset = fileOffsets.get(entry.file());
+        if (fileOffset == null) {
+            return null;
+        }
+
+        int byteOffset = fileOffset;
+        if (entry.anchor() != null) {
+            Integer anchorOff = anchorOffset(entry.file(), entry.anchor(), fileOffset);
+            if (anchorOff == null) {
+                return null;
+            }
+            byteOffset = anchorOff;
+        }
+
+        return byteOffset;
+    }
+
+    /**
      * Confirms the internal file offset dictionary has been generated.
      */
     private void ensureOffsetsBuilt() {
@@ -73,7 +105,7 @@ public class LocationResolver {
     }
 
     /**
-     * Debug helper: returns a snapshot of the computed per-file character offsets.
+     * Debug helper: returns a snapshot of the computed per-file byte offsets.
      */
     public Map<String, Integer> debugFileOffsets() {
         ensureOffsetsBuilt();
@@ -82,24 +114,26 @@ public class LocationResolver {
 
     /**
      * Processes every file progressively inside the EPUB spine in logical sequence.
-     * Captures running totals of visible text character counts to calculate
+     * Captures running totals of raw UTF-8 byte counts to calculate
      * physical base offsets across all files seamlessly.
      */
     private void buildFileOffsets() {
         int cursor = 0;
         for (EpubLoader.SpineItem item : loader.getSpine()) {
             String fullPath = loader.resolve(item.href());
-            String text = extractText(fullPath);
-            if (text != null) {
+            try {
+                byte[] raw = loader.read(fullPath);
                 fileOffsets.put(fullPath, cursor);
-                cursor += text.length();
+                cursor += raw.length;
+            } catch (Exception ignored) {
+                // Skip unreadable spine items.
             }
         }
     }
 
     /**
      * Resolves an individual TOC entry to its global logical offset across the book.
-     * Evaluates fragment hashes against HTML anchors inside the specified DOM.
+        * Evaluates fragment hashes against HTML anchors inside the resolved resource.
      *
      * @param entry the TOC reference
      * @return a qualified Heading detailing its global index/location, or null if unresolvable
@@ -110,115 +144,74 @@ public class LocationResolver {
             return null;
         }
 
-        int charOffset = fileOffset;
+        int byteOffset = fileOffset;
         if (entry.anchor() != null) {
             Integer anchorOff = anchorOffset(entry.file(), entry.anchor(), fileOffset);
             if (anchorOff != null) {
-                charOffset = anchorOff;
+                byteOffset = anchorOff;
             }
         }
 
-        return new Heading(entry, charOffset, toKindleLocation(charOffset));
+        return new Heading(entry, byteOffset, toKindleLocation(byteOffset));
     }
 
     /**
-     * Finds the intra-document character offsets pointing directly to an anchor component.
-     * Accomplishes this by mapping DOM text element accumulations prior to the identified DOM node.
+     * Finds the intra-document byte offsets pointing directly to an anchor component.
+     * Uses the raw XHTML/HTML representation and locates the anchor attribute (id/name/xml:id).
      *
      * @param filePath   the relative path referencing the document body
      * @param anchor     the target `#id` node identifier
-     * @param fileOffset the global character offset corresponding to the start of the document
-     * @return the calculated global character offset, or null if the query string anchor cannot be parsed
+     * @param fileOffset the global byte offset corresponding to the start of the document
+     * @return the calculated global byte offset, or null if the query string anchor cannot be parsed
      */
     private Integer anchorOffset(String filePath, String anchor, int fileOffset) {
         try {
             byte[] raw = loader.read(filePath);
-            Document soup = parseContent(raw);
-            Element target = soup.getElementById(anchor);
-            if (target == null) {
+            String html = new String(raw, StandardCharsets.UTF_8);
+            Integer localByteOffset = findAnchorByteOffset(html, anchor);
+            if (localByteOffset == null) {
                 return null;
             }
-
-            String preText = textBefore(soup, target);
-            return fileOffset + preText.length();
+            return fileOffset + localByteOffset;
         } catch (Exception e) {
             return null;
         }
     }
 
-    /**
-     * Reconstructs an HTML document directly from the resolved UTF-8 byte arrays,
-     * stripping out inline scripts and style definitions.
-     *
-     * @param raw byte representation retrieved from the epub parser
-     * @return cleaned Jsoup Document modeling the input HTML
-     */
-    private static Document parseContent(byte[] raw) {
-        String html = new String(raw, StandardCharsets.UTF_8);
-        Document soup = Jsoup.parse(html);
-        soup.select("script, style").remove();
-        return soup;
-    }
-
-    /**
-     * Traverses the specified resource extracting concatenated raw text blocks 
-     * linearly to facilitate byte offset calculations.
-     *
-     * @param filePath the absolute path pointing within the EPUB spine files
-     * @return complete text concatenation representing document length
-     */
-    private String extractText(String filePath) {
-        try {
-            byte[] raw = loader.read(filePath);
-            Document soup = parseContent(raw);
-            StringBuilder sb = new StringBuilder();
-            NodeTraversor.traverse(new NodeVisitor() {
-                @Override
-                public void head(Node node, int depth) {
-                    if (node instanceof TextNode textNode) {
-                        if (sb.length() > 0) sb.append(" ");
-                        sb.append(textNode.getWholeText());
-                    }
-                }
-                @Override
-                public void tail(Node node, int depth) {}
-            }, soup);
-            return sb.toString();
-        } catch (Exception e) {
+    private static Integer findAnchorByteOffset(String html, String anchor) {
+        int pos = findAnchorTokenStart(html, anchor);
+        if (pos < 0) {
             return null;
         }
+
+        // Approximate the start of the element (rather than the attribute itself).
+        int tagStart = html.lastIndexOf('<', pos);
+        if (tagStart >= 0) {
+            pos = tagStart;
+        }
+
+        return html.substring(0, pos).getBytes(StandardCharsets.UTF_8).length;
     }
 
-    /**
-     * Recursively traverses DOM text nodes calculating cumulative total characters
-     * up-to and ceasing immediately once traversing over the Target marker.
-     *
-     * @param soup   the parent Document scope parsing text components
-     * @param target the objective Node marking the destination boundary
-     * @return the cumulative string length measured sequentially
-     */
-    private String textBefore(Document soup, Element target) {
-        StringBuilder sb = new StringBuilder();
-        class Visitor implements NodeVisitor {
-            boolean found = false;
-
-            @Override
-            public void head(Node node, int depth) {
-                if (found) return;
-                if (node == target) {
-                    found = true;
-                    return;
-                }
-                if (node instanceof TextNode textNode) {
-                    sb.append(textNode.getWholeText());
-                }
-            }
-
-            @Override
-            public void tail(Node node, int depth) {}
+    private static int findAnchorTokenStart(String html, String anchor) {
+        // Typical patterns:
+        //   <a id="chapter1.3"></a>
+        //   <h2 xml:id='intro1'>...
+        //   <a name="foo"></a>
+        String quoted = "\\b(?:id|name|xml:id)\\s*=\\s*(['\"])" + Pattern.quote(anchor) + "\\1";
+        Matcher m = Pattern.compile(quoted, Pattern.CASE_INSENSITIVE).matcher(html);
+        if (m.find()) {
+            return m.start();
         }
-        NodeTraversor.traverse(new Visitor(), soup);
-        return sb.toString();
+
+        // Fallback: tolerate unquoted attributes (rare, but harmless to support).
+        String unquoted = "\\b(?:id|name|xml:id)\\s*=\\s*" + Pattern.quote(anchor) + "\\b";
+        m = Pattern.compile(unquoted, Pattern.CASE_INSENSITIVE).matcher(html);
+        if (m.find()) {
+            return m.start();
+        }
+
+        return -1;
     }
 
     /**
@@ -228,7 +221,8 @@ public class LocationResolver {
      * @param charOffset the byte index mapping globally across the book elements
      * @return the calculated location metric as perceived by Amazon Kindle firmware
      */
-    private static int toKindleLocation(int charOffset) {
-        return (charOffset / KINDLE_BYTES_PER_LOCATION) + 1;
+    private int toKindleLocation(int charOffset) {
+        double loc = (charOffset / bytesPerLocation) + locationBias;
+        return ((int) Math.floor(loc)) + 1;
     }
 }
