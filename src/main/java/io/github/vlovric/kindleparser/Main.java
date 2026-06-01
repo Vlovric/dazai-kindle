@@ -301,8 +301,28 @@ public class Main {
         sb.append("# KindleParser calibration template\n");
         sb.append("# Fill in at least 2 locations, keep the rest blank.\n");
         sb.append("# Format: Title - 123\n\n");
+
+        int prevLevel = -1;
+        boolean first = true;
         for (TocEntry e : tocEntries) {
-            sb.append(e.title()).append(" - \n");
+            int level = e.level();
+
+            // Readability: separate logical blocks.
+            // - Always add a blank line before a new H1 block (except first).
+            // - Also add a blank line when the level changes (H2→H3 etc.).
+            if (!first) {
+                if (level == 1) {
+                    sb.append("\n");
+                } else if (prevLevel != -1 && level != prevLevel) {
+                    sb.append("\n");
+                }
+            }
+
+            String indent = "  ".repeat(Math.max(0, level - 1));
+            sb.append(indent).append(e.title()).append(" - \n");
+
+            prevLevel = level;
+            first = false;
         }
 
         Files.writeString(outputPath, sb.toString(), StandardCharsets.UTF_8);
