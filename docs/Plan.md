@@ -1,6 +1,6 @@
 # KindleParser – Development Plan & Next Steps
 
-## Completed (as of current codebase)
+## Completed
 
 - [x] Java rewrite with Maven + args4j
 - [x] EPUB extraction and spine offset calculation using raw bytes
@@ -32,7 +32,6 @@
 2. **Calibration quality checks** – Emit a warning if RMSE > 5 locations; suggest adding more calibration points.
 3. **Support for page numbers** – Kindle sometimes includes page numbers (real page numbers). The `Clipping` model already has `page`; we could allow grouping by page number as an alternative to location (via a new flag).
 4. **Option to keep empty groups** – Currently all groups are emitted; add `--drop-empty-groups` to suppress headings with zero clippings (useful for very long TOCs).
-5. **Improve `--print-calibration-template`** – Allow limiting to top N headings (e.g. `--print-calibration-template 20`) to avoid huge files.
 
 ## Medium‑Term Ideas
 
@@ -44,8 +43,7 @@
 ## Architectural Decisions to Revisit
 
 - **EpubLoader keeps extracted files open** – Currently we hold a reference to the temp directory but do not track individual file handles. Memory is fine. However, when debugging, the extracted copy is never deleted. Add `--cleanup-debug` to optionally remove after run.
-- **Fyodor template installation** – Overwrites `~/.config/fyodor/template.erb` every run. This is acceptable because the template is idempotent. But if the user has a custom template, they will lose it. Check if file exists and is identical before overwriting.
-- **LocationResolver defaults** – The fallback `bytesPerLocation=128` is still used if calibration fails? Actually calibration is mandatory, so the default constructor is only used during calibration fitting (where we need the uncalibrated byte offsets). That is fine.
+- **Fyodor template installation** – Overwrites `~/.config/fyodor/template.erb` every run. This is acceptable because the template is idempotent. But if the user has a custom template, they will lose it. Check if file exists and is identical before overwriting. Warn the user to change the name of their existing template if it's not identical.
 
 ## Testing & Validation
 
@@ -59,6 +57,3 @@
 - Include a note about the required Calibre installation for AZW3/MOBI conversion.
 
 ## Long‑Term Vision
-
-- Possibly rewrite the Fyodor dependency in pure Java (using a ANTLR grammar for My Clippings.txt) to remove the Ruby subprocess. This would simplify distribution but is a large undertaking.
-- Add support for Kindle “Notebook” export (CSV/HTML) as an alternative input.
