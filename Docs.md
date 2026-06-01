@@ -201,9 +201,39 @@ filename = "????.json"
 - <mark class="hltr-yellow">Ne droppat empty groups</mark>
 - <mark class="hltr-blue">exportat objekte u readable format</mark>
 # 8 Template renderanje
-- <mark class="hltr-yellow">koje atribute mogu koristit u .mustache templateu?</mark>
-- <mark class="hltr-yellow">Kak uopce .mustache funkcionira??</mark>
-<mark class="hltr-yellow">- Koristit nesto drugo ako mi treba vise logike?</mark>
+- Renderer koristi FreeMarker template (npr. `.ftl`) tako da template moze imati logiku (if/else, varijable, indexiranje, macro-i).
+
+## Template context (tocno sto je dostupno u template-u)
+
+Top-level varijable:
+
+- `title` (String)
+- `groups` (List of `TemplateGroup`)
+
+`TemplateGroup`:
+
+- `heading` (TemplateHeading)
+- `clippings` (List of TemplateClipping)
+
+`TemplateHeading`:
+
+- `title` (String)
+- `level` (int)
+- `location` (int)
+- `charOffset` (int)
+- `file` (String)
+- `anchor` (String | null)
+
+`TemplateClipping`:
+
+- `type` (String) — "highlight" | "note" | "bookmark" | ...
+- `content` (String)
+- `location` (Integer | null) — start location parsed from `rawLocation`
+- `rawLocation` (String | null)
+- `page` (Integer | null)
+- `date` (String | null)
+- `bookTitle` (String | null)
+- `author` (String | null)
 
 Template treba ici:
 ```

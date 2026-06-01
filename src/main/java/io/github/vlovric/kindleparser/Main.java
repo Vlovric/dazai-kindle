@@ -32,7 +32,7 @@ import io.github.vlovric.kindleparser.toc.TocParserResolver;
 
 public class Main {
 
-    @Option(name = "--book", required = true, usage = "Path to .epub or .azw3 file")
+    @Option(name = "--book", required = true, usage = "Path to .epub/.azw3/.mobi file")
     private File book;
 
     @Option(name = "--clippings", usage = "Path to MyClippings.txt from your Kindle")
@@ -41,7 +41,7 @@ public class Main {
     @Option(name = "--title", usage = "Book title substring to filter clippings (case-insensitive)")
     private String title = "";
 
-    @Option(name = "--template", usage = "Path to the custom Mustache template file for output format")
+    @Option(name = "--template", usage = "Path to the custom FreeMarker template file for output format (e.g. .ftl)")
     private File template;
 
     @Option(name = "--output", usage = "Output file path. Defaults to <Book Title>.md if not specified")
