@@ -13,10 +13,6 @@
 - [x] `--headings-only` and `--print-calibration-template` modes
 - [x] Mandatory calibration enforced
 
-## Moji komentari
-- neke knjige imaju page u clippingu, fyodor mi moze to dat, mogu li nekako dobiti to iz epub-a? Ako mogu onda bi to mogao koristit za automatsko poravnavanje offseta ili grupiranje
-
-
 ## Known Issues / Limitations
 
 - **Anchor byte offset detection** uses regex on the entire HTML string. May fail for anchors inside large files (performance) or with unusual formatting. Consider a streaming XML parser that reports byte positions.
@@ -30,8 +26,7 @@
 
 1. **Better anchor location** – Use a lightweight SAX‑like parser (e.g. `javax.xml.stream.XMLStreamReader`) on the raw byte stream to record exact byte offset of the element start. This would be more robust than regex.
 2. **Calibration quality checks** – Emit a warning if RMSE > 5 locations; suggest adding more calibration points.
-3. **Support for page numbers** – Kindle sometimes includes page numbers (real page numbers). The `Clipping` model already has `page`; we could allow grouping by page number as an alternative to location (via a new flag).
-4. **Option to keep empty groups** – Currently all groups are emitted; add `--drop-empty-groups` to suppress headings with zero clippings (useful for very long TOCs).
+3. **Option to keep empty groups** – Currently all groups are emitted; add `--drop-empty-groups` to suppress headings with zero clippings (useful for very long TOCs).
 
 ## Medium‑Term Ideas
 
