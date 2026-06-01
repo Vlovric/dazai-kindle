@@ -130,7 +130,6 @@ npr
 ```
 ## Racunanje kindle lokacije
 - kindle lokacija je `floor((offset / bytesPerLocation) + bias) + 1`
-- default je `bytesPerLocation=128`, `bias=0`
 - + 1 jer lokacije pocinju na 1, a ne 0
 ```
 npr
@@ -144,13 +143,20 @@ npr
 
 ## Calibration (per-run)
 
-Ako lokacije driftaju (npr. dobijes -100+ razlike kasnije u knjizi), mozes fit-at linearnu kalibraciju iz par toc tocaka i primijeniti je samo za taj run.
+Kalibracija je **mandatory**. Bez nje lokacije mogu driftati jako puno (stotine lokacija).
 
-- CLI: `--calibrate <file>`
-- Format file-a (svaki red): `Heading - Location` ili `Heading: Location`
+- Generiraj template (upise cijeli TOC u file): `--print-calibration-template <path>`
+- Pokreni s kalibracijom: `--calibrate <file>`
+
+Format file-a (svaki red):
+
+- `Heading - Location` ili `Heading: Location`
 - Komentari sa `#` i prazni redovi se ignoriraju.
+- Linije tipa `Title -` (prazan location) se ignoriraju, pa mozes popuniti samo par tocaka.
 
-Program ce iz tih tocaka izracunati `bytesPerLocation` i `bias` i primijeniti ih na sve headinge za taj run.
+Program iz tih tocaka fit-a `bytesPerLocation` + `bias` i primijeni ih na sve headinge za taj run.
+
+Napomena: `-Dkindleparser.bytesPerLocation` i `-Dkindleparser.locationBias` vise nisu podrzani; koristi samo `--calibrate`.
 # 6 Fyodor
 - <mark class="hltr-red">template.erb</mark> se sprema u runtimeu ako ne postoji
 - <mark class="hltr-red">fyodor.toml </mark>mora postojat sa konkretnim: <mark class="hltr-yellow">File name format???</mark>
@@ -210,12 +216,6 @@ Template treba ici:
 ...
 >... 
 ```
-# 8 Debug flag sto sve treba
-- unzippani epub smjestit u permanent debug directory u projektu
-- output TOC parsinga i kao objekt to string i kao markdown da mogu prekontrolirat lako
-- outputat listu `lista (tocEntry, charOffset, location)` TOC lokacija kao objekt to string
-- spremit fyodor json kao readable json da provjerim
-- outputat grupirane clippinge sa headingsima kao objekt to string
 
 # 80,000 Hours real locations (run-20260531-205010)
 

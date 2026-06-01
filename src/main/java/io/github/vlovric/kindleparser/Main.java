@@ -3,6 +3,7 @@ package io.github.vlovric.kindleparser;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -34,13 +35,13 @@ public class Main {
     @Option(name = "--book", required = true, usage = "Path to .epub or .azw3 file")
     private File book;
 
-    @Option(name = "--clippings", required = true, usage = "Path to MyClippings.txt from your Kindle")
+    @Option(name = "--clippings", usage = "Path to MyClippings.txt from your Kindle")
     private File clippings;
 
     @Option(name = "--title", usage = "Book title substring to filter clippings (case-insensitive)")
     private String title = "";
 
-    @Option(name = "--template", required = true, usage = "Path to the custom Mustache template file for output format")
+    @Option(name = "--template", usage = "Path to the custom Mustache template file for output format")
     private File template;
 
     @Option(name = "--output", usage = "Output file path. Defaults to <Book Title>.md if not specified")
@@ -55,6 +56,9 @@ public class Main {
     @Option(name = "--calibrate", usage = "Path to a calibration file containing lines like 'Heading - 123' or 'Heading: 123'. Applies calibration for this run only")
     private File calibrate;
 
+    @Option(name = "--print-calibration-template", usage = "Write a calibration template containing all TOC entries to the specified file path, then exit")
+    private File printCalibrationTemplate;
+
     public static void main(String[] args) {
         new Main().run(args);
     }
@@ -68,6 +72,30 @@ public class Main {
             System.err.println("Usage: java -jar kindle-parser.jar [options...]");
             parser.printUsage(System.err);
             System.exit(1);
+        }
+
+        boolean isPrintingCalibrationTemplate = printCalibrationTemplate != null;
+
+        if (!isPrintingCalibrationTemplate && calibrate == null) {
+            System.err.println("[KindleParser] ❌ Calibration is mandatory.");
+            System.err.println("[KindleParser]    Provide --calibrate <file>, or run --print-calibration-template <path> to generate a template file.");
+            System.exit(1);
+        }
+
+        if (!isPrintingCalibrationTemplate && calibrate != null && !calibrate.exists()) {
+            System.err.println("[KindleParser] ❌ Calibration file not found: " + calibrate.getPath());
+            System.exit(1);
+        }
+
+        if (!isPrintingCalibrationTemplate && !headingsOnly) {
+            if (clippings == null) {
+                System.err.println("[KindleParser] ❌ Missing --clippings.");
+                System.exit(1);
+            }
+            if (template == null) {
+                System.err.println("[KindleParser] ❌ Missing --template.");
+                System.exit(1);
+            }
         }
 
         try {
@@ -128,30 +156,19 @@ public class Main {
                     System.exit(1);
                 }
 
+                if (isPrintingCalibrationTemplate) {
+                    writeCalibrationTemplate(printCalibrationTemplate.toPath(), tocEntries);
+                    return;
+                }
+
                 System.out.println("[KindleParser] 📍 Resolving locations for " + tocEntries.size() + " TOC entries...");
                 LocationResolver resolver;
 
-                if (calibrate != null) {
-                    CalibrationFit fit = fitCalibrationFromFile(calibrate.toPath(), loader, tocEntries);
-                    resolver = new LocationResolver(loader, fit.bytesPerLocation(), fit.locationBias());
-                    System.out.println("[KindleParser] 📐 Calibration fitted from file (bytesPerLocation="
-                            + fit.bytesPerLocation() + ", bias=" + fit.locationBias() + ", points=" + fit.pointsUsed() + ")");
-                } else {
-                    Double bytesPerLocation = readDoubleProperty("kindleparser.bytesPerLocation");
-                    Double locationBias = readDoubleProperty("kindleparser.locationBias");
-                    if (bytesPerLocation != null || locationBias != null) {
-                        resolver = new LocationResolver(
-                                loader,
-                                bytesPerLocation == null ? 128.0 : bytesPerLocation,
-                                locationBias == null ? 0.0 : locationBias
-                        );
-                        System.out.println("[KindleParser] 📐 Location calibration enabled (bytesPerLocation="
-                                + (bytesPerLocation == null ? 128.0 : bytesPerLocation)
-                                + ", bias=" + (locationBias == null ? 0.0 : locationBias) + ")");
-                    } else {
-                        resolver = new LocationResolver(loader);
-                    }
-                }
+                CalibrationFit fit = fitCalibrationFromFile(calibrate.toPath(), loader, tocEntries);
+                resolver = new LocationResolver(loader, fit.bytesPerLocation(), fit.locationBias());
+                System.out.println("[KindleParser] 📐 Calibration fitted from file (bytesPerLocation="
+                        + fit.bytesPerLocation() + ", bias=" + fit.locationBias() + ", points=" + fit.pointsUsed()
+                        + ", rmse=" + String.format("%.2f", fit.rmseLocations()) + " locations)");
 
                 resolvedHeadings = resolver.resolve(tocEntries);
 
@@ -274,22 +291,27 @@ public class Main {
         }
     }
 
-    private static Double readDoubleProperty(String key) {
-        String raw = System.getProperty(key);
-        if (raw == null || raw.isBlank()) {
-            raw = System.getenv(key);
+    private void writeCalibrationTemplate(Path outputPath, List<TocEntry> tocEntries) throws IOException {
+        Path parent = outputPath.toAbsolutePath().getParent();
+        if (parent != null) {
+            Files.createDirectories(parent);
         }
-        if (raw == null || raw.isBlank()) {
-            return null;
+
+        StringBuilder sb = new StringBuilder();
+        sb.append("# KindleParser calibration template\n");
+        sb.append("# Fill in at least 2 locations, keep the rest blank.\n");
+        sb.append("# Format: Title - 123\n\n");
+        for (TocEntry e : tocEntries) {
+            sb.append(e.title()).append(" - \n");
         }
-        try {
-            return Double.parseDouble(raw.trim());
-        } catch (Exception ignored) {
-            return null;
-        }
+
+        Files.writeString(outputPath, sb.toString(), StandardCharsets.UTF_8);
+        System.out.println("[KindleParser] ✅ Calibration template written to " + outputPath.toAbsolutePath());
     }
 
-    private record CalibrationFit(double bytesPerLocation, double locationBias, int pointsUsed) {}
+    private record CalibrationFit(double bytesPerLocation, double locationBias, int pointsUsed, double rmseLocations) {}
+
+    private record CalibrationPoint(String wantedTitle, String matchedTitle, int wantedLocation, int byteOffset) {}
 
     private static CalibrationFit fitCalibrationFromFile(Path file, EpubLoader loader, List<TocEntry> tocEntries) throws IOException {
         Map<String, Integer> targets = parseCalibrationFile(file);
@@ -302,6 +324,10 @@ public class Main {
         // Build points: x = byteOffset, y = (kindleLocation - 1)
         List<Double> xs = new java.util.ArrayList<>();
         List<Double> ys = new java.util.ArrayList<>();
+        List<CalibrationPoint> usedPoints = new java.util.ArrayList<>();
+
+        int notFound = 0;
+        int notResolvable = 0;
 
         for (Map.Entry<String, Integer> e : targets.entrySet()) {
             String wantedTitle = e.getKey();
@@ -309,15 +335,27 @@ public class Main {
             TocEntry match = findTocEntry(tocEntries, wantedTitle);
             if (match == null) {
                 System.out.println("[KindleParser] ⚠️  Calibration title not found in TOC: '" + wantedTitle + "'");
+                notFound++;
                 continue;
             }
             Integer byteOffset = uncalibrated.byteOffsetOf(match);
             if (byteOffset == null) {
                 System.out.println("[KindleParser] ⚠️  Calibration anchor/file not resolvable for: '" + match.title() + "'");
+                notResolvable++;
                 continue;
             }
             xs.add((double) byteOffset);
             ys.add((double) (wantedLoc - 1));
+            usedPoints.add(new CalibrationPoint(wantedTitle, match.title(), wantedLoc, byteOffset));
+        }
+
+        System.out.println("[KindleParser] 📌 Calibration points: used=" + xs.size()
+                + ", notFoundInToc=" + notFound
+                + ", notResolvable=" + notResolvable);
+
+        for (CalibrationPoint p : usedPoints) {
+            System.out.println("[KindleParser]    '" + p.wantedTitle() + "' -> '" + p.matchedTitle()
+                    + "' @ byteOffset=" + p.byteOffset() + " => location=" + p.wantedLocation());
         }
 
         if (xs.size() < 2) {
@@ -349,7 +387,17 @@ public class Main {
         double c = my - (m * mx);
         double bytesPerLocation = 1.0 / m;
         double locationBias = c;
-        return new CalibrationFit(bytesPerLocation, locationBias, xs.size());
+
+        // RMSE in locations on calibration points.
+        double se = 0;
+        for (int i = 0; i < n; i++) {
+            double yHat = (m * xs.get(i)) + c;
+            double err = ys.get(i) - yHat;
+            se += err * err;
+        }
+        double rmse = Math.sqrt(se / n);
+
+        return new CalibrationFit(bytesPerLocation, locationBias, xs.size(), rmse);
     }
 
     private static Map<String, Integer> parseCalibrationFile(Path file) throws IOException {
