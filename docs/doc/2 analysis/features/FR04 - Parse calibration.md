@@ -1,10 +1,9 @@
 # 1. Overview & Context
-- `brief description of the purpose of the functionality`
-	- `example: the user should be able to register and log in using the following methods: XYZ`
+The user should be able to provide a calibration file where multiple heading locations are specified as a reference point for the ToC heading location calculation.
 - - -
 # 2. Features
 - - -
-## FRXX_XX - Name
+## FR04_01 - 
 
 | ID            | FRXX_XX                                   |
 | ------------- | ----------------------------------------- |
