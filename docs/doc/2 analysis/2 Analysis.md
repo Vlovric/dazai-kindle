@@ -1,8 +1,16 @@
 # 1. Functional Requirements
-- [[FRXX - name]]
-	- [[FRXX - name#FRXX_XX - Name]]
-	- ...
-- ...
-	- ...
+- [[FR01 - Parsing of entries]]
+	- [[FR01 - Parsing of entries#FR01_01 - Entry parsing]]
+- [[FR02 - Parsing of ToC]]
+	- [[FR02 - Parsing of ToC#FR02_01 - Ebook format conversion]]
+	- [[FR02 - Parsing of ToC#FR02_02 - Computing ToC heading locations]]
+	- [[FR02 - Parsing of ToC#FR02_03 - Output of only ToC headings]]
+- [[FR03 - Output templating]]
+	- [[FR03 - Output templating#FR03_01 - Clipping entry templating]]
+	- [[FR03 - Output templating#FR03_02 - ToC heading only templating]]
+- [[FR04 - Parse calibration]]
+	- [[FR04 - Parse calibration#FR04_01 - Generation of calibration file]]
+- [[FR05 - Debug mode]]
+	- [[FR05 - Debug mode#FR05_01 - Debug mode]]
 # [[2_1 Data Dictionary|2. Data Dictionary]]
 # [[2_2 External Dependencies|3. External Dependencies]]
