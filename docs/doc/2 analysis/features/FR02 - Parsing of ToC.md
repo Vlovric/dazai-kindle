@@ -197,7 +197,8 @@ Link to wireframe
 #### **ID**: FR02_02-EC_13
 **Scenario**: RMSE > 5
 	**Given** after fitting the RMSE is > 5
-	**Then** the system should prompt the user if he wants to continue or abort and add more location points
+	**Then** the system should warn the user
+	**And** the system should continue
 ### 2.3. Entities involved
 - [[2_1 Data Dictionary#Entitet naziv|Entity]]
 - ... 
