@@ -9,6 +9,8 @@ import java.util.List;
 
 import io.github.vlovric.kindleparser.DebugArtifacts;
 import io.github.vlovric.kindleparserv2.AppArgs;
+import io.github.vlovric.kindleparserv2.pipeline.steps.LoadEpubStep;
+import io.github.vlovric.kindleparserv2.pipeline.steps.ParseTocStep;
 import io.github.vlovric.kindleparserv2.pipeline.steps.PreprocessBookStep;
 
 /**
@@ -29,12 +31,10 @@ public class Pipeline {
      */
     public void run() throws Exception{
 
-        PipelineContext context = buildContext();
-
         List<PipelineStep> steps = List.of(
-            new PreprocessBookStep(args)        // .azw3/.mobi → .epub via Calibre if needed
-            // new LoadEpubStep(args),          // extract zip, parse OPF/spine/metadata
-            // new ParseTocStep(args),          // NCX or XHTML TOC → List<TocEntry>
+            new PreprocessBookStep(args),       // .azw3/.mobi → .epub via Calibre if needed
+            new LoadEpubStep(),                 // extract zip, parse OPF/spine/metadata
+            new ParseTocStep()                  // NCX or XHTML TOC → List<TocEntry>
             // new PrintCalibrationTemplateStep(args), // [EXIT] if --print-calibration-template
             // new FitCalibrationStep(args),    // least-squares fit from calibration file
             // new ResolveHeadingsStep(args),   // byte offsets → Kindle locations
@@ -44,10 +44,12 @@ public class Pipeline {
             // new RenderOutputStep(args)       // FreeMarker → output file
         );
 
-        for (PipelineStep step : steps) {
-            StepResult result = step.execute(context);
-            if (result == StepResult.FINISH) {
-                return;
+        try (PipelineContext context = buildContext()) {
+            for (PipelineStep step : steps) {
+                StepResult result = step.execute(context);
+                if (result == StepResult.FINISH) {
+                    return;
+                }
             }
         }
     }
