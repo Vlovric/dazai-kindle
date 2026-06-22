@@ -6,6 +6,10 @@ import io.github.vlovric.kindleparserv2.pipeline.PipelineContext;
 import io.github.vlovric.kindleparserv2.pipeline.PipelineStep;
 import io.github.vlovric.kindleparserv2.pipeline.StepResult;
 
+/**
+ * PipelineStep that preprocesses the input book file.
+ * If the file is in .azw3 or .mobi format, it is converted to .epub using Calibre's ebook-convert tool.
+ */
 public class PreprocessBookStep implements PipelineStep {
 
     private final AppArgs args;

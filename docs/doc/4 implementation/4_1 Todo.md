@@ -1,7 +1,6 @@
 # 1. Tasks
 # Working on
 - [ ] [[11 - Argument parsing and orchestration]]
-- [ ] [[2 - Ebook format conversion]]
 # 1.1. High prio
 - [ ] [[9 - Test suite]]
 

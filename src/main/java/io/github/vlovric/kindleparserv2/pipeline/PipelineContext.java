@@ -1,9 +1,11 @@
 package io.github.vlovric.kindleparserv2.pipeline;
 
+import java.io.IOException;
 import java.nio.file.Path;
 import java.util.List;
 
 import io.github.vlovric.kindleparser.DebugArtifacts;
+import io.github.vlovric.kindleparser.EpubLoader;
 import io.github.vlovric.kindleparser.models.Clipping;
 import io.github.vlovric.kindleparser.models.Heading;
 import io.github.vlovric.kindleparser.models.HeadingGroup;
@@ -13,13 +15,21 @@ import io.github.vlovric.kindleparser.models.TocEntry;
  * Mutable bag of state passed through all pipeline steps.
  * Fields are populated progressively — each step reads what it needs
  * and writes what it produces. Null means "not yet populated".
+ *
+ * Implements AutoCloseable to ensure EpubLoader is always cleaned up, even on exception.
  */
-public class PipelineContext {
+public class PipelineContext implements AutoCloseable {
     
     /**
      * Populated by: PreprocessBookStep
      */
     public Path bookPath;
+
+    /**
+     * Populated by: LoadEpubStep. Kept open until ResolveHeadingsStep completes.
+     * Closed automatically when PipelineContext is closed.
+     */
+    public EpubLoader epubLoader;
 
     /**
      * Populated by: LoadEpubStep
@@ -73,6 +83,13 @@ public class PipelineContext {
 
     public PipelineContext(DebugArtifacts debug) {
         this.debug = debug;
+    }
+
+    @Override
+    public void close() throws IOException {
+        if (epubLoader != null) {
+            epubLoader.close();
+        }
     }
 
 }

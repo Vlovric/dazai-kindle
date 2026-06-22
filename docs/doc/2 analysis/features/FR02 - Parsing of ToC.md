@@ -127,8 +127,8 @@ Link to wireframe
 **Scenario**: Parsed ToC is empty
 	**Given** the .epub was successfully loaded
 	**When** the ToC is parsed
-	**And** the parsed ToC is empty because no valid headings were found
-	**Then** the system should output a error
+	**And** the parsed ToC is empty because no valid headings were found, or no TOC file (toc.ncx / nav.xhtml) is referenced in the EPUB manifest
+	**Then** the system should output an error
 	**And** the system should exit
 #### **ID**: FR02_02-EC_02
 **Scenario**: A title has a typo
@@ -207,6 +207,19 @@ Link to wireframe
 	**Given** after fitting the RMSE is > 5
 	**Then** the system should warn the user
 	**And** the system should continue
+#### **ID**: FR02_02-EC_14
+**Scenario**: EPUB file is structurally invalid
+	**Given** the provided file has a .epub extension
+	**When** the system tries to open and parse the EPUB structure (META-INF/container.xml, OPF)
+	**And** the file is not a valid ZIP, or is missing required structural files
+	**Then** the system should output an error
+	**And** the system should exit
+#### **ID**: FR02_02-EC_15
+**Scenario**: EPUB metadata (title/author) is missing or unparseable
+	**Given** the EPUB is successfully loaded
+	**When** the OPF metadata section is absent or malformed
+	**Then** the system continues with null title/author
+	**And** downstream steps use fallback values (e.g. derived from filename)
 ### 2.3. Entities involved
 - [[2_1 Data Dictionary#Entitet naziv|Entity]]
 - ... 
