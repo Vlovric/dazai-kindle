@@ -1,15 +1,24 @@
 package io.github.vlovric.kindleparserv2.pipeline.steps;
 
+import io.github.vlovric.kindleparser.calibre.BookPreprocessor;
+import io.github.vlovric.kindleparserv2.AppArgs;
 import io.github.vlovric.kindleparserv2.pipeline.PipelineContext;
 import io.github.vlovric.kindleparserv2.pipeline.PipelineStep;
 import io.github.vlovric.kindleparserv2.pipeline.StepResult;
 
 public class PreprocessBookStep implements PipelineStep {
 
-    @Override
-    public StepResult execute(PipelineContext context) throws Exception {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'execute'");
+    private final AppArgs args;
+
+    public PreprocessBookStep(AppArgs args) {
+        this.args = args;
     }
-    
+
+    @Override
+    public StepResult execute(PipelineContext ctx) throws Exception {
+        System.out.println("[KindleParser] Checking input file...");
+        ctx.bookPath = BookPreprocessor.preprocess(args.book());
+        System.out.println("[KindleParser] 📖 Loaded: " + ctx.bookPath);
+        return StepResult.CONTINUE;
+    }
 }

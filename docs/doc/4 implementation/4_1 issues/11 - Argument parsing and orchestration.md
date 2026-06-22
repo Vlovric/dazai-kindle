@@ -132,18 +132,18 @@ main(args)
 
 ## Step inventory
 
-| Step class | Reads from ctx | Writes to ctx | Exits if |
-|---|---|---|---|
-| `PreprocessBookStep` | — | `bookPath` | — |
-| `LoadEpubStep` | `bookPath` | `epubTitle`, `epubAuthor` | — |
-| `ParseTocStep` | `bookPath` | `tocEntries` | `tocEntries` empty |
-| `PrintCalibrationTemplateStep` | `tocEntries` | — | `--print-calibration-template` set |
-| `FitCalibrationStep` | `tocEntries`, `bookPath` | `bytesPerLocation`, `locationBias` | — |
-| `ResolveHeadingsStep` | `tocEntries`, `bytesPerLocation`, `locationBias` | `resolvedHeadings` | — |
-| `HeadingsOnlyStep` | `resolvedHeadings` | — | `--headings-only` set |
-| `ParseClippingsStep` | `epubTitle` | `clippings`, `matchedBookTitle` | `clippings` empty |
-| `GroupClippingsStep` | `clippings`, `resolvedHeadings` | `groups` | — |
-| `RenderOutputStep` | `groups`, `matchedBookTitle`, `epubTitle` | — (writes file) | — |
+| Step class                     | Reads from ctx                                   | Writes to ctx                      | Exits if                           |
+| ------------------------------ | ------------------------------------------------ | ---------------------------------- | ---------------------------------- |
+| `PreprocessBookStep`           | —                                                | `bookPath`                         | —                                  |
+| `LoadEpubStep`                 | `bookPath`                                       | `epubTitle`, `epubAuthor`          | —                                  |
+| `ParseTocStep`                 | `bookPath`                                       | `tocEntries`                       | `tocEntries` empty                 |
+| `PrintCalibrationTemplateStep` | `tocEntries`                                     | —                                  | `--print-calibration-template` set |
+| `FitCalibrationStep`           | `tocEntries`, `bookPath`                         | `bytesPerLocation`, `locationBias` | —                                  |
+| `ResolveHeadingsStep`          | `tocEntries`, `bytesPerLocation`, `locationBias` | `resolvedHeadings`                 | —                                  |
+| `HeadingsOnlyStep`             | `resolvedHeadings`                               | —                                  | `--headings-only` set              |
+| `ParseClippingsStep`           | `epubTitle`                                      | `clippings`, `matchedBookTitle`    | `clippings` empty                  |
+| `GroupClippingsStep`           | `clippings`, `resolvedHeadings`                  | `groups`                           | —                                  |
+| `RenderOutputStep`             | `groups`, `matchedBookTitle`, `epubTitle`        | — (writes file)                    | —                                  |
 
 > Note: `EpubLoader` is a `Closeable` resource. Since it needs to stay open across both `LoadEpubStep`
 > and `FitCalibrationStep`/`ResolveHeadingsStep`, the cleanest approach is to store it in
