@@ -17,7 +17,8 @@ public record AppArgs(
     Path headingsTemplate,             // --headings-template (optional)
     boolean debug,                     // --debug
     Path calibrate,                    // --calibrate      (required unless printCalibrationTemplate)
-    Path printCalibrationTemplate      // --print-calibration-template
+    Path printCalibrationTemplate,     // --print-calibration-template
+    boolean overwriteFyodorTemplate    // --overwrite-fyodor-template
 ) {
     static AppArgs of(
         File book,
@@ -29,7 +30,8 @@ public record AppArgs(
         File headingsTemplate,
         boolean debug,
         File calibrate,
-        File printCalibrationTemplate
+        File printCalibrationTemplate,
+        boolean overwriteFyodorTemplate
     ) {
         return new AppArgs(
             book.toPath(),
@@ -41,7 +43,8 @@ public record AppArgs(
             toPath(headingsTemplate),
             debug,
             toPath(calibrate),
-            toPath(printCalibrationTemplate)
+            toPath(printCalibrationTemplate),
+            overwriteFyodorTemplate
         );
     }
 

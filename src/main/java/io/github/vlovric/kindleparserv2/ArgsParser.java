@@ -43,6 +43,9 @@ public class ArgsParser {
     @Option(name = "--print-calibration-template", usage = "Write calibration template to path, then exit")
     private File printCalibrationTemplate;
 
+    @Option(name = "--overwrite-fyodor-template", usage = "Overwrite ~/.config/fyodor/template.erb even if it differs from the bundled template")
+    private boolean overwriteFyodorTemplate = false;
+
     /**
      * Parses args and validates cross-argument constraints.
      * Throws CmdLineException for structural parse failures.
@@ -94,7 +97,8 @@ public class ArgsParser {
             headingsTemplate,
             debug,
             calibrate,
-            printCalibrationTemplate
+            printCalibrationTemplate,
+            overwriteFyodorTemplate
         );
     }
 

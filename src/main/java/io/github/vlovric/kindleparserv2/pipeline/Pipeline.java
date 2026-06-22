@@ -10,8 +10,10 @@ import java.util.List;
 import io.github.vlovric.kindleparser.DebugArtifacts;
 import io.github.vlovric.kindleparserv2.AppArgs;
 import io.github.vlovric.kindleparserv2.pipeline.steps.FitCalibrationStep;
+import io.github.vlovric.kindleparserv2.pipeline.steps.GroupClippingsStep;
 import io.github.vlovric.kindleparserv2.pipeline.steps.HeadingsOnlyStep;
 import io.github.vlovric.kindleparserv2.pipeline.steps.LoadEpubStep;
+import io.github.vlovric.kindleparserv2.pipeline.steps.ParseClippingsStep;
 import io.github.vlovric.kindleparserv2.pipeline.steps.ParseTocStep;
 import io.github.vlovric.kindleparserv2.pipeline.steps.PreprocessBookStep;
 import io.github.vlovric.kindleparserv2.pipeline.steps.PrintCalibrationTemplateStep;
@@ -42,9 +44,9 @@ public class Pipeline {
             new PrintCalibrationTemplateStep(args), // [EXIT] if --print-calibration-template
             new FitCalibrationStep(args),           // least-squares fit from calibration file
             new ResolveHeadingsStep(),              // byte offsets → Kindle locations
-            new HeadingsOnlyStep(args)              // [EXIT] if --headings-only
-            // new ParseClippingsStep(args),        // Fyodor subprocess → List<Clipping>
-            // new GroupClippingsStep(args),        // binary-search grouping under headings
+            new HeadingsOnlyStep(args),             // [EXIT] if --headings-only
+            new ParseClippingsStep(args),           // Fyodor subprocess → List<Clipping>
+            new GroupClippingsStep()                // binary-search grouping under headings
             // new RenderOutputStep(args)           // FreeMarker → output file
         );
 

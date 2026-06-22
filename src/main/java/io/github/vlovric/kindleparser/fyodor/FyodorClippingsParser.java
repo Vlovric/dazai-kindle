@@ -10,6 +10,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.BufferedReader;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.*;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.ArrayList;
@@ -22,20 +23,18 @@ public class FyodorClippingsParser {
 
     private final Path clippingsPath;
     private final String fyodorBin;
+    private final boolean overwriteFyodorTemplate;
     private final ObjectMapper mapper;
 
-    /**
-     * Initializes the parser with the path to the MyClippings.txt file.
-     * Looks for the FYODOR_BIN environment variable to locate the executable,
-     * defaulting to "fyodor" otherwise. Configure Jackson to ignore unknown properties.
-     *
-     * @param clippingsPath the path to the Kindle clippings text file
-     */
     public FyodorClippingsParser(Path clippingsPath) {
+        this(clippingsPath, false);
+    }
+
+    public FyodorClippingsParser(Path clippingsPath, boolean overwriteFyodorTemplate) {
         this.clippingsPath = clippingsPath;
+        this.overwriteFyodorTemplate = overwriteFyodorTemplate;
         String envBin = System.getenv("FYODOR_BIN");
         this.fyodorBin = (envBin != null && !envBin.isBlank()) ? envBin : "fyodor";
-        
         this.mapper = new ObjectMapper()
                 .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
     }
@@ -160,27 +159,50 @@ public class FyodorClippingsParser {
         }
     }
 
-    /**
-     * Copies the bundled template.erb from resources to ~/.config/fyodor/template.erb
-     * so that the fyodor subprocess will inherently use it for newline-delimited JSON.
-     *
-     * @throws IOException if directory creation or file copying fails
-     */
     private void setupUserFyodorTemplate(DebugArtifacts debug) throws IOException {
         Path configDir = Paths.get(System.getProperty("user.home"), ".config", "fyodor");
-        Files.createDirectories(configDir);
+        setupUserFyodorTemplate(configDir, debug);
+    }
 
+    // Package-private for testing — accepts an injectable configDir instead of ~/.config/fyodor.
+    void setupUserFyodorTemplate(Path configDir, DebugArtifacts debug) throws IOException {
+        Files.createDirectories(configDir);
         Path templatePath = configDir.resolve("template.erb");
+
+        String bundled;
         try (InputStream is = getClass().getResourceAsStream("/template.erb")) {
             if (is == null) {
                 throw new IOException("Could not find /template.erb in resources");
             }
-            Files.copy(is, templatePath, StandardCopyOption.REPLACE_EXISTING);
+            bundled = new String(is.readAllBytes(), StandardCharsets.UTF_8);
+        }
+
+        if (Files.exists(templatePath)) {
+            String existing = Files.readString(templatePath, StandardCharsets.UTF_8);
+            // Normalize line endings so CRLF vs LF differences don't matter.
+            if (!normalize(existing).equals(normalize(bundled))) {
+                if (!overwriteFyodorTemplate) {
+                    throw new IOException(
+                            "[KindleParser] ❌ ~/.config/fyodor/template.erb exists but has different content "
+                            + "than the required KindleParser template.\n"
+                            + "[KindleParser]    Re-run with --overwrite-fyodor-template to replace it.");
+                }
+                Files.writeString(templatePath, bundled, StandardCharsets.UTF_8);
+                System.out.println("[KindleParser] ⚠️  Overwrote existing Fyodor template at " + templatePath.toAbsolutePath());
+            }
+            // If content matches, nothing to do.
+        } else {
+            Files.writeString(templatePath, bundled, StandardCharsets.UTF_8);
+            System.out.println("[KindleParser] ✅ Fyodor template saved to " + templatePath.toAbsolutePath());
         }
 
         if (debug != null) {
             debug.writeText("04_template_installed_path.txt", templatePath.toAbsolutePath().toString() + "\n");
         }
+    }
+
+    private static String normalize(String s) {
+        return s.replace("\r\n", "\n").replace("\r", "\n");
     }
 
     private void checkUserFyodorToml(DebugArtifacts debug) {
