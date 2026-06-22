@@ -37,13 +37,13 @@ The user should be able to output only the ToC itself using a optional template.
 | **UI reaction**   | The user is notified a .epub file was already present and will be used<br>The path of the used .epub file is outputted |
 #### FR02_01-HP_03
 
-| ID:               | FR02_01-HP_03                                 |
-| ----------------- | --------------------------------------------- |
-| **Scenario**      | Provided .epub file, no conversion needed     |
-| **Precondition**  |                                               |
-| **Trigger**       | Supplied ebook file is .epub                  |
-| **System action** | 1. Does nothing, uses the provided .epub file |
-| **UI reaction**   | The path of the used .epub file is outputted  |
+| ID:               | FR02_01-HP_03                                                                                          |
+| ----------------- | ------------------------------------------------------------------------------------------------------ |
+| **Scenario**      | Provided .epub file, no conversion needed                                                              |
+| **Precondition**  |                                                                                                        |
+| **Trigger**       | Supplied ebook file is .epub                                                                           |
+| **System action** | 1. Does nothing, uses the provided .epub file<br>2. Extension matching is case-insensitive (.EPUB works) |
+| **UI reaction**   | The path of the used .epub file is outputted                                                           |
 ### 2.2. Edge cases
 #### **ID**: FR02_01-EC_01
 **Scenario**: Non supported ebook file format
@@ -86,7 +86,15 @@ The user should be able to output only the ToC itself using a optional template.
 **Scenario**: Calibre conversion interrupted by user
 	**Given** the calibre subprocess is called and running
 	**When** the subprocess is interrupted (Ctrl-C)
-	**Then** the system should output a message to the user
+	**Then** the system should forcibly terminate the Calibre process
+	**And** the system should output a message to the user
+	**And** the system should exit
+#### **ID**: FR02_01-EC_08
+**Scenario**: File has no extension
+	**Given** the user provides a file with no extension
+	**When** the system checks the file format
+	**Then** the system treats it as an unsupported format (see EC_01)
+	**And** the system should output an error message to the user
 	**And** the system should exit
 ### 2.3. Entities involved
 
