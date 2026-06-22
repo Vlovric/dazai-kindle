@@ -17,6 +17,7 @@ import io.github.vlovric.kindleparserv2.pipeline.steps.ParseClippingsStep;
 import io.github.vlovric.kindleparserv2.pipeline.steps.ParseTocStep;
 import io.github.vlovric.kindleparserv2.pipeline.steps.PreprocessBookStep;
 import io.github.vlovric.kindleparserv2.pipeline.steps.PrintCalibrationTemplateStep;
+import io.github.vlovric.kindleparserv2.pipeline.steps.RenderOutputStep;
 import io.github.vlovric.kindleparserv2.pipeline.steps.ResolveHeadingsStep;
 
 /**
@@ -46,8 +47,8 @@ public class Pipeline {
             new ResolveHeadingsStep(),              // byte offsets → Kindle locations
             new HeadingsOnlyStep(args),             // [EXIT] if --headings-only
             new ParseClippingsStep(args),           // Fyodor subprocess → List<Clipping>
-            new GroupClippingsStep()                // binary-search grouping under headings
-            // new RenderOutputStep(args)           // FreeMarker → output file
+            new GroupClippingsStep(),               // binary-search grouping under headings
+            new RenderOutputStep(args)              // FreeMarker → output file
         );
 
         try (PipelineContext context = buildContext()) {
