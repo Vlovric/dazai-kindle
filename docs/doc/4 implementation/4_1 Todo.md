@@ -6,12 +6,7 @@
 
 # 1.2. Medium prio
 - [ ] [[1 - Entry parsing]]
-- [ ] [[X3 - Computing ToC heading locations]]
-- [ ] [[X4 - Output of only ToC headings]]
 - [ ] [[5 - Clipping entry templating]]
-- [ ] [[X6 - ToC heading only templating]]
-- [ ] [[X7 - Generation of calibration file]]
-- [ ] [[X8 - Debug mode]]
 # 1.3. Low prio
 - [ ] 
 - - -
