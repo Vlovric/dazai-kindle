@@ -96,7 +96,7 @@ class FitCalibrationStepTest {
     private static AppArgs argsWithCalibrate(Path calibFile) {
         return new AppArgs(
             Path.of("book.epub"), null, "", null, null,
-            false, null, false, calibFile, null
+            false, null, false, calibFile, null, false
         );
     }
 

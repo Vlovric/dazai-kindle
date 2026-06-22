@@ -169,7 +169,7 @@ class HeadingsOnlyStepTest {
             output,
             headingsOnly,
             template,
-            false, null, null
+            false, null, null, false
         );
     }
 
