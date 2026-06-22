@@ -122,7 +122,7 @@ class PrintCalibrationTemplateStepTest {
         return new AppArgs(
             Path.of("book.epub"), null, "", null, null,
             false, null, false, null,
-            outputPath
+            outputPath, false
         );
     }
 
