@@ -150,66 +150,7 @@ main(args)
 > `PipelineContext` as well (`public EpubLoader epubLoader`) and close it explicitly at the end of
 > `ResolveHeadingsStep` (the last step that needs it), or wrap those three steps in a single
 > resource-managing composite step.
-# Example of a Step class
-```java
-public class PrintCalibrationTemplateStep implements PipelineStep {
 
-    private final AppConfig config;
-
-    public PrintCalibrationTemplateStep(AppConfig config) {
-        this.config = config;
-    }
-
-    @Override
-    public StepResult execute(PipelineContext ctx) throws Exception {
-        if (config.printCalibrationTemplate() == null) {
-            return StepResult.CONTINUE;
-        }
-
-        Path outputPath = config.printCalibrationTemplate();
-
-        Path parent = outputPath.toAbsolutePath().getParent();
-        if (parent != null) {
-            Files.createDirectories(parent);
-        }
-
-        String content = buildCalibrationTemplate(ctx.tocEntries);
-
-        if (ctx.debug != null) {
-            ctx.debug.writeText("03_calibration_template_preview.txt", content);
-        }
-
-        Files.writeString(outputPath, content, StandardCharsets.UTF_8);
-        System.out.println("[KindleParser] ✅ Calibration template written to " + outputPath.toAbsolutePath());
-
-        return StepResult.DONE;
-    }
-
-    private String buildCalibrationTemplate(List<TocEntry> tocEntries) {
-        StringBuilder sb = new StringBuilder();
-        sb.append("# KindleParser calibration template\n");
-        sb.append("# Fill in at least 2 locations, keep the rest blank.\n");
-        sb.append("# Format: Title - 123\n\n");
-
-        int prevLevel = -1;
-        boolean first = true;
-        for (TocEntry e : tocEntries) {
-            int level = e.level();
-            if (!first) {
-                if (level == 1 || (prevLevel != -1 && level != prevLevel)) {
-                    sb.append("\n");
-                }
-            }
-            String indent = "  ".repeat(Math.max(0, level - 1));
-            sb.append(indent).append(e.title()).append(" - \n");
-            prevLevel = level;
-            first = false;
-        }
-
-        return sb.toString();
-    }
-}
-```
 # Package structure
 Keep existing structure
 ```

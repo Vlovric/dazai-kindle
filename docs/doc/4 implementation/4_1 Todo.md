@@ -1,17 +1,17 @@
 # 1. Tasks
 # Working on
-- [ ] [[11 - Argument parsing and orchestration]]
+
 # 1.1. High prio
 - [ ] [[9 - Test suite]]
 
 # 1.2. Medium prio
 - [ ] [[1 - Entry parsing]]
-- [ ] [[3 - Computing ToC heading locations]]
-- [ ] [[4 - Output of only ToC headings]]
+- [ ] [[X3 - Computing ToC heading locations]]
+- [ ] [[X4 - Output of only ToC headings]]
 - [ ] [[5 - Clipping entry templating]]
-- [ ] [[6 - ToC heading only templating]]
-- [ ] [[7 - Generation of calibration file]]
-- [ ] [[8 - Debug mode]]
+- [ ] [[X6 - ToC heading only templating]]
+- [ ] [[X7 - Generation of calibration file]]
+- [ ] [[X8 - Debug mode]]
 # 1.3. Low prio
 - [ ] 
 - - -

@@ -28,12 +28,12 @@ The user should be able to provide a calibration file where multiple heading loc
 	**When** the parsed ToC is empty
 	**Then** the outputted calibration file will be empty
 #### **ID**: FR04_01-EC_02
-**Scenario**: Output path is invalid
+**Scenario**: Output path has non-existent parent directory
 	**Given** the ToC is parsed
 	**When** the calibration file is constructed
-	**And** the saving fails because the output path is invalid
-	**Then** the system should output the error
-	**And** the system should exit
+	**And** the output path contains directories that do not yet exist
+	**Then** the system creates the missing directories automatically
+	**And** the file is written to the specified path
 #### **ID**: FR04_01-EC_03
 **Scenario**: Lack of priviledge for writing to outputh path
 	**Given** the ToC is parsed
