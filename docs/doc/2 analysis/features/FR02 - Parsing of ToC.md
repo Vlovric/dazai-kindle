@@ -37,13 +37,13 @@ The user should be able to output only the ToC itself using a optional template.
 | **UI reaction**   | The user is notified a .epub file was already present and will be used<br>The path of the used .epub file is outputted |
 #### FR02_01-HP_03
 
-| ID:               | FR02_01-HP_03                                 |
-| ----------------- | --------------------------------------------- |
-| **Scenario**      | Provided .epub file, no conversion needed     |
-| **Precondition**  |                                               |
-| **Trigger**       | Supplied ebook file is .epub                  |
-| **System action** | 1. Does nothing, uses the provided .epub file |
-| **UI reaction**   | The path of the used .epub file is outputted  |
+| ID:               | FR02_01-HP_03                                                                                          |
+| ----------------- | ------------------------------------------------------------------------------------------------------ |
+| **Scenario**      | Provided .epub file, no conversion needed                                                              |
+| **Precondition**  |                                                                                                        |
+| **Trigger**       | Supplied ebook file is .epub                                                                           |
+| **System action** | 1. Does nothing, uses the provided .epub file<br>2. Extension matching is case-insensitive (.EPUB works) |
+| **UI reaction**   | The path of the used .epub file is outputted                                                           |
 ### 2.2. Edge cases
 #### **ID**: FR02_01-EC_01
 **Scenario**: Non supported ebook file format
@@ -86,7 +86,15 @@ The user should be able to output only the ToC itself using a optional template.
 **Scenario**: Calibre conversion interrupted by user
 	**Given** the calibre subprocess is called and running
 	**When** the subprocess is interrupted (Ctrl-C)
-	**Then** the system should output a message to the user
+	**Then** the system should forcibly terminate the Calibre process
+	**And** the system should output a message to the user
+	**And** the system should exit
+#### **ID**: FR02_01-EC_08
+**Scenario**: File has no extension
+	**Given** the user provides a file with no extension
+	**When** the system checks the file format
+	**Then** the system treats it as an unsupported format (see EC_01)
+	**And** the system should output an error message to the user
 	**And** the system should exit
 ### 2.3. Entities involved
 
@@ -119,8 +127,8 @@ Link to wireframe
 **Scenario**: Parsed ToC is empty
 	**Given** the .epub was successfully loaded
 	**When** the ToC is parsed
-	**And** the parsed ToC is empty because no valid headings were found
-	**Then** the system should output a error
+	**And** the parsed ToC is empty because no valid headings were found, or no TOC file (toc.ncx / nav.xhtml) is referenced in the EPUB manifest
+	**Then** the system should output an error
 	**And** the system should exit
 #### **ID**: FR02_02-EC_02
 **Scenario**: A title has a typo
@@ -135,14 +143,14 @@ Link to wireframe
 	**Given** the .epub was successfully loaded
 	**And** the ToC is not empty
 	**And** the calibration file exists
-	**When** a calibration heading uses anything other than "-", ":", "—" as a delimiter
+	**When** a calibration heading uses anything other than "-", ":", "—", "–" as a delimiter
 	**Then** the heading is skipped
 #### **ID**: FR02_02-EC_04
-**Scenario**: Calibration file uses "-", ":", "—"  delimiters
+**Scenario**: Calibration file uses "-", ":", "—", "–" delimiters
 	**Given** the .epub was successfully loaded
 	**And** the ToC is not empty
 	**And** the calibration file exists
-	**When** a calibration heading uses any of "-", ":", "—" as a delimiter
+	**When** a calibration heading uses any of "-", ":", "—" (em dash), "–" (en dash) as a delimiter
 	**Then** the heading is correctly parsed
 #### **ID**: FR02_02-EC_05
 **Scenario**: Calibration file headings have whitespaces
@@ -151,11 +159,24 @@ Link to wireframe
 	**And** the calibration file exists
 	**When** a calibration heading has whitespace before or after location
 	**Then** the heading is correctly parsed
+#### **ID**: FR02_02-EC_05b
+**Scenario**: Calibration file has only comments or blank lines (no parseable entries)
+	**Given** the calibration file exists
+	**When** all non-blank lines start with "#" (comment lines)
+	**Then** the system treats it as an empty file (see EC_06)
+	**And** the system should output an error
+	**And** the system should exit
+#### **ID**: FR02_02-EC_05c
+**Scenario**: Calibration file heading has blank location (unfilled template entry)
+	**Given** the calibration file exists
+	**When** a line has a title and delimiter but no location number (e.g., "Chapter One - ")
+	**Then** the line is silently skipped
+	**And** the system continues parsing remaining lines
 #### **ID**: FR02_02-EC_06
 **Scenario**: Calibration file empty
 	**Given** the .epub was successfully loaded
 	**And** the ToC is not empty
-	**When** the calibration file is empty
+	**When** the calibration file is empty or has no parseable entries
 	**Then** the system should output a error
 	**And** the system should exit
 #### **ID**: FR02_02-EC_07
@@ -199,6 +220,19 @@ Link to wireframe
 	**Given** after fitting the RMSE is > 5
 	**Then** the system should warn the user
 	**And** the system should continue
+#### **ID**: FR02_02-EC_14
+**Scenario**: EPUB file is structurally invalid
+	**Given** the provided file has a .epub extension
+	**When** the system tries to open and parse the EPUB structure (META-INF/container.xml, OPF)
+	**And** the file is not a valid ZIP, or is missing required structural files
+	**Then** the system should output an error
+	**And** the system should exit
+#### **ID**: FR02_02-EC_15
+**Scenario**: EPUB metadata (title/author) is missing or unparseable
+	**Given** the EPUB is successfully loaded
+	**When** the OPF metadata section is absent or malformed
+	**Then** the system continues with null title/author
+	**And** downstream steps use fallback values (e.g. derived from filename)
 ### 2.3. Entities involved
 - [[2_1 Data Dictionary#Entitet naziv|Entity]]
 - ... 
@@ -218,13 +252,13 @@ Link to wireframe
 ### 2.1. Happy path
 #### FR02_03-HP_01
 
-| ID:               | FR02_03-HP_01                                                                                                                |
-| ----------------- | ---------------------------------------------------------------------------------------------------------------------------- |
-| **Scenario**      | ToC heading output without template                                                                                          |
-| **Precondition**  | Book path is provided<br>A optional heading template is not provided<br>A optional output path is not provided               |
-| **Trigger**       | A flag for headings only output is provided.                                                                                 |
-| **System action** | 1. ToC is parsed from the book<br>2. The default markdown template is used<br>3. The ToC output is saved to default location |
-| **UI reaction**   | The user is notified of the path for the output                                                                              |
+| ID:               | FR02_03-HP_01                                                                                                                                                                       |
+| ----------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Scenario**      | ToC heading output without template                                                                                                                                                 |
+| **Precondition**  | Book path is provided<br>A optional heading template is not provided<br>A optional output path is not provided                                                                      |
+| **Trigger**       | A flag for headings only output is provided.                                                                                                                                        |
+| **System action** | 1. ToC is parsed from the book<br>2. Inline markdown is generated (no bundled default template yet — each heading is rendered as `## Title  *(Location: N)*`)<br>3. Output saved to `{title}_headings.md` |
+| **UI reaction**   | The user is notified of the path for the output                                                                                                                                     |
 #### FR02_03-HP_02
 | ID:               | FR02_03-HP_02                                                                                                                                   |
 | ----------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
