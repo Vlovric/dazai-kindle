@@ -3,6 +3,8 @@ package io.github.vlovric.kindleparser.fyodor;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
+import io.github.vlovric.kindleparser.fyodor.FyodorClippingsParser;
+
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;

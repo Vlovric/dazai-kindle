@@ -1,5 +1,7 @@
 package io.github.vlovric.kindleparser.calibration;
 
+import io.github.vlovric.kindleparser.calibration.CalibrationFit;
+import io.github.vlovric.kindleparser.calibration.CalibrationFitter;
 import io.github.vlovric.kindleparser.models.TocEntry;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
