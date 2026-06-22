@@ -124,17 +124,26 @@ class HeadingsOnlyStepTest {
         assertTrue(content.contains("Prologue:"), "Template should render heading titles");
     }
 
-    /** FR02_03: empty headings list → file written (just the title line), returns FINISH. */
+    /** FR03_02-EC_01: empty headings list → IOException, pipeline stops. */
     @Test
-    void execute_emptyHeadings_writesFileSafely() throws Exception {
+    void execute_emptyHeadings_throwsIOException() throws Exception {
         Path out = tempDir.resolve("out.md");
         AppArgs args = argsHeadingsOnly(true, null, out);
         PipelineContext ctx = buildCtx(List.of(), "Empty Book");
 
-        StepResult result = new HeadingsOnlyStep(args).execute(ctx);
+        assertThrows(java.io.IOException.class, () -> new HeadingsOnlyStep(args).execute(ctx));
+        assertFalse(Files.exists(out), "No output file should be created when headings are empty");
+    }
 
-        assertEquals(StepResult.FINISH, result);
-        assertTrue(Files.exists(out));
+    /** FR03_02-EC_02: --headings-template points to non-existent file → IOException. */
+    @Test
+    void execute_missingTemplateFile_throwsIOException() throws Exception {
+        Path missing = tempDir.resolve("nonexistent.ftl");
+        Path out = tempDir.resolve("out.txt");
+        AppArgs args = argsHeadingsOnly(true, missing, out);
+        PipelineContext ctx = buildCtx(List.of(heading("Chapter One", 1, 10)), "My Book");
+
+        assertThrows(java.io.IOException.class, () -> new HeadingsOnlyStep(args).execute(ctx));
     }
 
     /** Filename special chars in book title are replaced with underscores. */

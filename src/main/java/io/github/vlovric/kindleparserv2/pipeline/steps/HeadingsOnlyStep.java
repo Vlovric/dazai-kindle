@@ -29,6 +29,10 @@ public class HeadingsOnlyStep implements PipelineStep {
         }
 
         List<Heading> headings = ctx.resolvedHeadings;
+        if (headings == null || headings.isEmpty()) {
+            throw new IOException("[KindleParser] ❌ No headings were resolved. Cannot write headings-only output.");
+        }
+
         String title = ctx.epubTitle != null ? ctx.epubTitle : deriveTitle(ctx);
 
         Path outputPath = resolveOutputPath(args, title);

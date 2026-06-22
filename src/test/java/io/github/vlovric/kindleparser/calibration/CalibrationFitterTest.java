@@ -81,6 +81,13 @@ class CalibrationFitterTest {
         assertEquals(200, result.get("Chapter Two"));
     }
 
+    /** FR02_02-EC_07: calibration file does not exist → IOException. */
+    @Test
+    void parse_nonExistentFileThrows() {
+        Path missing = tempDir.resolve("missing.txt");
+        assertThrows(IOException.class, () -> fitter.parseCalibrationFile(missing));
+    }
+
     /** FR02_02-EC_06: empty calibration file → IOException. */
     @Test
     void parse_emptyFileThrows() throws Exception {
