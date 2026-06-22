@@ -124,7 +124,7 @@ Link to wireframe
 	**When** the template file loading throws an error because of lack of priviledge
 	**Then** the system should log the error
 	**And** the system should exit
-#### **ID**: FR03_03-EC_04
+#### **ID**: FR03_02-EC_04
 **Scenario**: Output path is invalid
 	**Given** the user provided the output path
 	**When** the output is saved
@@ -138,13 +138,13 @@ Link to wireframe
 	**And** the output saving throws an error because of lack of permission
 	**Then** the system should log the error
 	**And** the system should exit
-#### **ID**: FR03_01-EC_06
+#### **ID**: FR03_02-EC_06
 **Scenario**: Template has syntax errors
 	**Given** the provided template exists
 	**When** the template has syntax errors
 	**Then** the system should log the error
 	**And** the system should exit
-#### **ID**: FR03_01-EC_07
+#### **ID**: FR03_02-EC_07
 **Scenario**: Template references non existent variables
 	**Given** the provided template exists
 	**When** the template references non existent variables

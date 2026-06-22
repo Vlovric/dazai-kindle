@@ -91,6 +91,19 @@ class RenderOutputStepTest {
         assertThrows(IOException.class, () -> new RenderOutputStep(args).execute(ctx));
     }
 
+    /** FR03_01-EC_06: template references an undefined variable → IOException. */
+    @Test
+    void execute_undefinedVariableInTemplate_throwsIOException() throws Exception {
+        Path templateFile = tempDir.resolve("undef.ftl");
+        Files.writeString(templateFile, "${nonExistentVar}", StandardCharsets.UTF_8);
+
+        Path outputFile = tempDir.resolve("out.md");
+        AppArgs args = args(templateFile, outputFile, "");
+
+        PipelineContext ctx = buildCtx("Book", List.of());
+        assertThrows(IOException.class, () -> new RenderOutputStep(args).execute(ctx));
+    }
+
     /** HP_01: output path derived from matchedBookTitle when no --output flag. */
     @Test
     void execute_noExplicitOutput_derivesFilenameFromMatchedTitle() throws Exception {

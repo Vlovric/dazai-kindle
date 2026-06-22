@@ -146,6 +146,30 @@ class HeadingsOnlyStepTest {
         assertThrows(java.io.IOException.class, () -> new HeadingsOnlyStep(args).execute(ctx));
     }
 
+    /** FR03_02-EC_06: headings template has FreeMarker syntax errors → IOException. */
+    @Test
+    void execute_syntaxErrorInHeadingsTemplate_throwsIOException() throws Exception {
+        Path template = tempDir.resolve("bad.ftl");
+        Files.writeString(template, "${unclosed", StandardCharsets.UTF_8);
+        Path out = tempDir.resolve("out.txt");
+        AppArgs args = argsHeadingsOnly(true, template, out);
+        PipelineContext ctx = buildCtx(List.of(heading("Chapter One", 1, 10)), "My Book");
+
+        assertThrows(java.io.IOException.class, () -> new HeadingsOnlyStep(args).execute(ctx));
+    }
+
+    /** FR03_02-EC_07: headings template references undefined variable → IOException. */
+    @Test
+    void execute_undefinedVariableInHeadingsTemplate_throwsIOException() throws Exception {
+        Path template = tempDir.resolve("undef.ftl");
+        Files.writeString(template, "${nonExistentVar}", StandardCharsets.UTF_8);
+        Path out = tempDir.resolve("out.txt");
+        AppArgs args = argsHeadingsOnly(true, template, out);
+        PipelineContext ctx = buildCtx(List.of(heading("Chapter One", 1, 10)), "My Book");
+
+        assertThrows(java.io.IOException.class, () -> new HeadingsOnlyStep(args).execute(ctx));
+    }
+
     /** Filename special chars in book title are replaced with underscores. */
     @Test
     void execute_specialCharsInTitle_sanitizedInFilename() throws Exception {
