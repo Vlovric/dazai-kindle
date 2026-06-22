@@ -143,14 +143,14 @@ Link to wireframe
 	**Given** the .epub was successfully loaded
 	**And** the ToC is not empty
 	**And** the calibration file exists
-	**When** a calibration heading uses anything other than "-", ":", "—" as a delimiter
+	**When** a calibration heading uses anything other than "-", ":", "—", "–" as a delimiter
 	**Then** the heading is skipped
 #### **ID**: FR02_02-EC_04
-**Scenario**: Calibration file uses "-", ":", "—"  delimiters
+**Scenario**: Calibration file uses "-", ":", "—", "–" delimiters
 	**Given** the .epub was successfully loaded
 	**And** the ToC is not empty
 	**And** the calibration file exists
-	**When** a calibration heading uses any of "-", ":", "—" as a delimiter
+	**When** a calibration heading uses any of "-", ":", "—" (em dash), "–" (en dash) as a delimiter
 	**Then** the heading is correctly parsed
 #### **ID**: FR02_02-EC_05
 **Scenario**: Calibration file headings have whitespaces
@@ -159,11 +159,24 @@ Link to wireframe
 	**And** the calibration file exists
 	**When** a calibration heading has whitespace before or after location
 	**Then** the heading is correctly parsed
+#### **ID**: FR02_02-EC_05b
+**Scenario**: Calibration file has only comments or blank lines (no parseable entries)
+	**Given** the calibration file exists
+	**When** all non-blank lines start with "#" (comment lines)
+	**Then** the system treats it as an empty file (see EC_06)
+	**And** the system should output an error
+	**And** the system should exit
+#### **ID**: FR02_02-EC_05c
+**Scenario**: Calibration file heading has blank location (unfilled template entry)
+	**Given** the calibration file exists
+	**When** a line has a title and delimiter but no location number (e.g., "Chapter One - ")
+	**Then** the line is silently skipped
+	**And** the system continues parsing remaining lines
 #### **ID**: FR02_02-EC_06
 **Scenario**: Calibration file empty
 	**Given** the .epub was successfully loaded
 	**And** the ToC is not empty
-	**When** the calibration file is empty
+	**When** the calibration file is empty or has no parseable entries
 	**Then** the system should output a error
 	**And** the system should exit
 #### **ID**: FR02_02-EC_07
@@ -239,13 +252,13 @@ Link to wireframe
 ### 2.1. Happy path
 #### FR02_03-HP_01
 
-| ID:               | FR02_03-HP_01                                                                                                                |
-| ----------------- | ---------------------------------------------------------------------------------------------------------------------------- |
-| **Scenario**      | ToC heading output without template                                                                                          |
-| **Precondition**  | Book path is provided<br>A optional heading template is not provided<br>A optional output path is not provided               |
-| **Trigger**       | A flag for headings only output is provided.                                                                                 |
-| **System action** | 1. ToC is parsed from the book<br>2. The default markdown template is used<br>3. The ToC output is saved to default location |
-| **UI reaction**   | The user is notified of the path for the output                                                                              |
+| ID:               | FR02_03-HP_01                                                                                                                                                                       |
+| ----------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Scenario**      | ToC heading output without template                                                                                                                                                 |
+| **Precondition**  | Book path is provided<br>A optional heading template is not provided<br>A optional output path is not provided                                                                      |
+| **Trigger**       | A flag for headings only output is provided.                                                                                                                                        |
+| **System action** | 1. ToC is parsed from the book<br>2. Inline markdown is generated (no bundled default template yet — each heading is rendered as `## Title  *(Location: N)*`)<br>3. Output saved to `{title}_headings.md` |
+| **UI reaction**   | The user is notified of the path for the output                                                                                                                                     |
 #### FR02_03-HP_02
 | ID:               | FR02_03-HP_02                                                                                                                                   |
 | ----------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
