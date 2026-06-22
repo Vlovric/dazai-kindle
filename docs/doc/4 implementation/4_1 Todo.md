@@ -5,7 +5,6 @@
 - [ ] [[9 - Test suite]]
 
 # 1.2. Medium prio
-- [ ] [[5 - Clipping entry templating]]
 # 1.3. Low prio
 - [ ] 
 - - -

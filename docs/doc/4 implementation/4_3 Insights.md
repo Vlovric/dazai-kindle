@@ -41,6 +41,17 @@
 
 - **Reason:** Different devices, different conversion pipelines, even different firmware versions change the mapping. Persisting calibration would be misleading. The `--calibrate` file is re‑fitted every run.
 
+## 11. `--headings-only` still requires `--calibrate`
+
+- **Pitfall:** The feature spec and an old note in the usage doc implied calibration was optional for `--headings-only`. The `ArgsParser.validate()` only exempts `--print-calibration-template` from the mandatory calibration check — `--headings-only` is **not** exempt.
+- **Why:** The `HeadingsOnlyStep` renders `ctx.resolvedHeadings`, which is produced by `FitCalibrationStep` + `ResolveHeadingsStep`. Both run before `HeadingsOnlyStep` in the pipeline and both require the calibration fit to have been done.
+- **Risk:** A future agent reading the spec may try to "fix" the arg parser by removing the calibrate check for headings-only, which would cause a NullPointerException inside `FitCalibrationStep`.
+
+## 12. `Grouper` Javadoc says empty groups are excluded — they are not
+
+- **Pitfall:** The `Grouper.group()` Javadoc states *"Empty groups (headings with no clippings) are excluded from the output."* The actual code returns **all** groups unconditionally, including empty ones. Templates and downstream code must handle groups with an empty `clippings` list.
+- **Why it matters:** A future agent may see the Javadoc and "fix" the code to filter empty groups, silently breaking templates that expect every TOC heading to appear in the output.
+
 ## 10. Anchor detection in raw HTML is naive
 
 - **Method:** Regex `\b(?:id|name|xml:id)\s*=\s*(["']?)anchor\1`. This works for well‑formed EPUBs but may fail if the attribute is split across lines or uses unusual quoting. No fallback to DOM parsing (because we need byte offsets). Future improvements could use a streaming parser to locate the exact byte position of the element start.

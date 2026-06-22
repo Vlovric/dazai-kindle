@@ -58,15 +58,20 @@ flowchart TD
 
 | Class | Responsibility |
 |-------|----------------|
-| `Main` | CLI parsing (args4j), orchestration, calibration fitting, debug artifact writing. |
-| `BookPreprocessor` | Calls `ebook-convert` for `.azw3`/`.mobi` → `.epub`. |
+| `Main` | Thin entrypoint: parses CLI args via `ArgsParser`, starts `Pipeline`, exits non-zero on error. |
+| `ArgsParser` | Holds args4j annotations, validates cross-argument constraints (missing flags, file existence), builds `AppArgs`. |
+| `AppArgs` | Immutable record of all parsed CLI arguments passed through the pipeline. |
+| `Pipeline` | Composes and runs the ordered list of `PipelineStep` instances; builds `PipelineContext` including `DebugArtifacts`. |
+| `DebugArtifacts` | Writes JSON/text intermediate files into a timestamped `debug-runs/run-<ts>/` directory when `--debug` is used. |
+| `BookPreprocessor` | Calls `ebook-convert` for `.azw3`/`.mobi` → `.epub`. Skips conversion if sibling `.epub` already exists. |
 | `EpubLoader` | Unzips EPUB, reads `META-INF/container.xml` to locate `content.opf`, parses metadata, manifest, spine ordering. Keeps extracted files for debugging if requested. |
 | `TocParserResolver` | Chooses parser based on file extension (`.ncx` → `NcxTocParser`, `.xhtml`/`.html` → `XhtmlTocParser`). Resolves relative paths to absolute within EPUB. |
 | `NcxTocParser` | Parses EPUB2 `toc.ncx`: walks `<navMap>` → `<navPoint>` recursively, extracts title, `src` (file + anchor), level. |
 | `XhtmlTocParser` | Parses EPUB3 `nav.xhtml`: finds `<nav epub:type="toc">`, walks `<ol>` → `<li>` → `<a>`, extracts `href` (file + anchor), level. |
+| `CalibrationFitter` | Parses the calibration file (supports `-`, `:`, `—`, `–` delimiters), fuzzy-matches titles to TOC entries, fits OLS linear model (byte offset → Kindle location). |
 | `LocationResolver` | **Critical** – maps each TOC entry to a Kindle location using raw byte offsets across spine files. Supports linear calibration `location = floor(byteOffset / bpl + bias) + 1`. |
-| `FyodorClippingsParser` | Launches `fyodor` subprocess with custom ERB template (installed to `~/.config/fyodor/template.erb`). Reads newline‑delimited JSON output, selects best file by title matching, deserialises to `Clipping` records. |
-| `Grouper` | Assigns each clipping to the last heading whose location ≤ clipping’s location (binary search). Drops empty heading groups. |
+| `FyodorClippingsParser` | Installs ERB template to `~/.config/fyodor/template.erb` (errors if different template exists unless `--overwrite-fyodor-template`), launches `fyodor` subprocess, reads newline‑delimited JSON output, selects best file by title scoring, deserialises to `Clipping` records. |
+| `Grouper` | Assigns each clipping to the last heading whose location ≤ clipping’s location (binary search). All heading groups including empty ones are returned. |
 | `TemplateRenderer` | Loads user‑provided FreeMarker template, exposes `title` and `groups` (converted to `Template*` POJOs). |
 
 ## Important Technical Decisions

@@ -11,12 +11,14 @@ KindleParser extracts highlights, notes, and bookmarks from a Kindle `My Clippin
 | `--template <path>` | Yes* | Path to a FreeMarker template (`.ftl`). (*Not required for `--headings-only` or `--print-calibration-template`.) |
 | `--output <path>` | No | Output file path. Default: `<Book Title>.md` (sanitised). |
 | `--title <string>` | No | Filter clippings by book title (case‑insensitive substring). Useful when `My Clippings.txt` contains multiple books. |
-| `--headings-only` | No | Print extracted headings with their computed Kindle locations and exit. Does not require clippings or template. |
+| `--headings-only` | No | Print extracted headings with their computed Kindle locations and exit. Does not require clippings or template. Still requires `--calibrate`. |
+| `--headings-template <path>` | No | FreeMarker template for `--headings-only` output. If omitted, a default Markdown format is used (`## Title  *(Location: N)*`). |
 | `--debug` | No | Write intermediate artifacts to `./debug-runs/run-<timestamp>/`. Includes extracted EPUB, TOC JSON, resolved headings, Fyodor output, grouping stats. |
 | `--calibrate <file>` | **Mandatory** | Path to a calibration file (see format below). The file provides 2+ known heading‑location pairs to fit a linear mapping for this run. |
 | `--print-calibration-template <path>` | No | Generate a calibration template containing all TOC headings (indented, blank locations) and exit. User fills in Kindle locations and re‑runs with `--calibrate`. |
+| `--overwrite-fyodor-template` | No | Overwrite `~/.config/fyodor/template.erb` even if it already exists with different content. Without this flag the program exits with an error if the template differs. |
 
-> **Calibration is mandatory** (unless `--headings-only` or `--print-calibration-template`).  
+> **Calibration is mandatory** (unless `--print-calibration-template`).  
 
 ## Calibration File Format
 
