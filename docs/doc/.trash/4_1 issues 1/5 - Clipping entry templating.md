@@ -1,1 +1,0 @@
-**Link to FR:** [[FR03 - Output templating#FR03_01 - Clipping entry templating]]

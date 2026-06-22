@@ -25,6 +25,10 @@ public class PipelineContext {
      * Populated by: LoadEpubStep
      */
     public String epubTitle;
+
+    /**
+     * Populated by: LoadEpubStep
+     */
     public String epubAuthor;
 
     /**
@@ -36,6 +40,10 @@ public class PipelineContext {
      * Populated by: FitCalibrationStep
      */
     public double bytesPerLocation;
+
+    /**
+     * Populated by: FitCalibrationStep
+     */
     public double locationBias;
 
     /**
