@@ -9,6 +9,7 @@ import java.util.List;
 
 import io.github.vlovric.kindleparser.DebugArtifacts;
 import io.github.vlovric.kindleparserv2.AppArgs;
+import io.github.vlovric.kindleparserv2.pipeline.steps.PreprocessBookStep;
 
 /**
  * Main processing pipeline. Composed of a sequence of PipelineSteps, each performing a specific task.
@@ -31,18 +32,16 @@ public class Pipeline {
         PipelineContext context = buildContext();
 
         List<PipelineStep> steps = List.of(
-            /**
-            new PreprocessBookStep(args),       // .azw3/.mobi → .epub via Calibre if needed
-            new LoadEpubStep(args),             // extract zip, parse OPF/spine/metadata
-            new ParseTocStep(args),             // NCX or XHTML TOC → List<TocEntry>
-            new PrintCalibrationTemplateStep(args), // [EXIT] if --print-calibration-template
-            new FitCalibrationStep(args),       // least-squares fit from calibration file
-            new ResolveHeadingsStep(args),      // byte offsets → Kindle locations
-            new HeadingsOnlyStep(args),         // [EXIT] if --headings-only
-            new ParseClippingsStep(args),       // Fyodor subprocess → List<Clipping>
-            new GroupClippingsStep(args),       // binary-search grouping under headings
-            new RenderOutputStep(args)          // FreeMarker → output file
-             */
+            new PreprocessBookStep(args)        // .azw3/.mobi → .epub via Calibre if needed
+            // new LoadEpubStep(args),          // extract zip, parse OPF/spine/metadata
+            // new ParseTocStep(args),          // NCX or XHTML TOC → List<TocEntry>
+            // new PrintCalibrationTemplateStep(args), // [EXIT] if --print-calibration-template
+            // new FitCalibrationStep(args),    // least-squares fit from calibration file
+            // new ResolveHeadingsStep(args),   // byte offsets → Kindle locations
+            // new HeadingsOnlyStep(args),      // [EXIT] if --headings-only
+            // new ParseClippingsStep(args),    // Fyodor subprocess → List<Clipping>
+            // new GroupClippingsStep(args),    // binary-search grouping under headings
+            // new RenderOutputStep(args)       // FreeMarker → output file
         );
 
         for (PipelineStep step : steps) {
