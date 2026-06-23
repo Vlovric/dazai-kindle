@@ -9,6 +9,12 @@ import io.github.vlovric.kindleparser.pipeline.PipelineContext;
 import io.github.vlovric.kindleparser.pipeline.PipelineStep;
 import io.github.vlovric.kindleparser.pipeline.StepResult;
 
+/**
+ * Assigns each clipping to the TOC heading whose location is closest from below.
+ * The resulting list includes groups for every heading, even those with no clippings —
+ * this is intentional so templates can render the full book structure. Do not filter
+ * empty groups here; templates must handle them (see Agent Insights §12).
+ */
 public class GroupClippingsStep implements PipelineStep {
 
     @Override

@@ -9,8 +9,16 @@ import io.github.vlovric.kindleparser.pipeline.PipelineContext;
 import io.github.vlovric.kindleparser.pipeline.PipelineStep;
 import io.github.vlovric.kindleparser.pipeline.StepResult;
 
+/**
+ * Reads the user-supplied calibration file, performs a least-squares linear fit between
+ * byte offsets and Kindle locations, and stores the result in {@link PipelineContext}.
+ * The fit coefficients ({@code bytesPerLocation} and {@code locationBias}) are what make
+ * location resolution accurate — without calibration, the 128-bytes-per-location default
+ * drifts by tens or hundreds of locations across a book (see Agent Insights §2).
+ */
 public class FitCalibrationStep implements PipelineStep {
 
+    /** Warn when RMSE exceeds this many locations — empirically, above ~5 the grouping becomes noticeably wrong. */
     private static final double RMSE_WARNING_THRESHOLD = 5.0;
 
     private final AppArgs args;
