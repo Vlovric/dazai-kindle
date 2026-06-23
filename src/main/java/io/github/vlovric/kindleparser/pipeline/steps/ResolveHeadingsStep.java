@@ -8,6 +8,12 @@ import io.github.vlovric.kindleparser.pipeline.PipelineContext;
 import io.github.vlovric.kindleparser.pipeline.PipelineStep;
 import io.github.vlovric.kindleparser.pipeline.StepResult;
 
+/**
+ * Converts raw TOC entries into calibrated Kindle locations using the fit produced by
+ * {@link FitCalibrationStep}. This is the last step that reads from {@link PipelineContext#epubLoader};
+ * after it completes the loader is no longer needed (though it stays in the context until
+ * {@link PipelineContext#close()} is called).
+ */
 public class ResolveHeadingsStep implements PipelineStep {
 
     @Override

@@ -11,6 +11,11 @@ import io.github.vlovric.kindleparser.pipeline.PipelineContext;
 import io.github.vlovric.kindleparser.pipeline.PipelineStep;
 import io.github.vlovric.kindleparser.pipeline.StepResult;
 
+/**
+ * Writes a calibration template file pre-filled with TOC heading titles and blank location fields.
+ * When {@code --print-calibration-template} is not set, this step is a no-op and the pipeline continues.
+ * When it is set, the file is written and the pipeline finishes — no further steps run.
+ */
 public class PrintCalibrationTemplateStep implements PipelineStep {
 
     private final AppArgs args;
@@ -43,6 +48,11 @@ public class PrintCalibrationTemplateStep implements PipelineStep {
         return StepResult.FINISH;
     }
 
+    /**
+     * Builds the calibration file content from TOC entries. Entries are indented by level and
+     * separated by blank lines on level changes so the file is easy to scan and fill in by hand.
+     * Package-private so tests can assert the output format directly.
+     */
     static String buildCalibrationTemplate(List<TocEntry> tocEntries) {
         StringBuilder sb = new StringBuilder();
         sb.append("# KindleParser calibration template\n");

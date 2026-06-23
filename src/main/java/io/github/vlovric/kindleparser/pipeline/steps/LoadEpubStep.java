@@ -7,6 +7,12 @@ import io.github.vlovric.kindleparser.pipeline.PipelineContext;
 import io.github.vlovric.kindleparser.pipeline.PipelineStep;
 import io.github.vlovric.kindleparser.pipeline.StepResult;
 
+/**
+ * Opens the EPUB archive and reads its metadata, spine, and TOC reference.
+ * The {@link EpubLoader} is stored in {@link PipelineContext#epubLoader} and intentionally left
+ * open — it must remain accessible until {@link ResolveHeadingsStep} completes. It is closed
+ * automatically when {@link PipelineContext} is closed at the end of the pipeline.
+ */
 public class LoadEpubStep implements PipelineStep {
 
     @Override

@@ -9,6 +9,11 @@ import io.github.vlovric.kindleparser.pipeline.PipelineContext;
 import io.github.vlovric.kindleparser.pipeline.PipelineStep;
 import io.github.vlovric.kindleparser.pipeline.StepResult;
 
+/**
+ * Parses the EPUB table of contents into {@link PipelineContext#tocEntries}.
+ * Supports both EPUB3 nav.xhtml and EPUB2 toc.ncx formats via {@link io.github.vlovric.kindleparser.toc.TocParserResolver}.
+ * Throws if the TOC is empty — an empty TOC means there is no structure to group clippings under.
+ */
 public class ParseTocStep implements PipelineStep {
 
     @Override

@@ -52,10 +52,10 @@ class ParseClippingsStepTest {
         Path clippingsFile = tempDir.resolve("clippings.txt");
         AppArgs args = args(clippingsFile, "MyBook");
 
-        FyodorParseResult emptyResult = new FyodorParseResult(List.of(), null, null, null);
+        FyodorParseResult emptyResult = new FyodorParseResult(List.of(), null, null, null, null, null);
 
         try (var mocked = mockConstruction(FyodorClippingsParser.class, (mock, ctx) ->
-                when(mock.parse(eq("MyBook"), isNull(), isNull(), isNull())).thenReturn(emptyResult))) {
+                when(mock.parse(eq("MyBook"), isNull(), isNull())).thenReturn(emptyResult))) {
 
             PipelineContext ctx = new PipelineContext(null);
             ctx.epubTitle = null;
@@ -71,10 +71,10 @@ class ParseClippingsStepTest {
         AppArgs args = args(clippingsFile, "MyBook");
 
         Clipping clipping = new Clipping("MyBook", "Author", "highlight", "100", null, "2024", "some text");
-        FyodorParseResult result = new FyodorParseResult(List.of(clipping), null, null, "MyBook");
+        FyodorParseResult result = new FyodorParseResult(List.of(clipping), null, null, "MyBook", null, null);
 
         try (var mocked = mockConstruction(FyodorClippingsParser.class, (mock, ctx) ->
-                when(mock.parse(eq("MyBook"), isNull(), isNull(), isNull())).thenReturn(result))) {
+                when(mock.parse(eq("MyBook"), isNull(), isNull())).thenReturn(result))) {
 
             PipelineContext ctx = new PipelineContext(null);
             ctx.epubTitle = null;
@@ -95,10 +95,10 @@ class ParseClippingsStepTest {
         AppArgs args = args(clippingsFile, "");
 
         Clipping clipping = new Clipping("Book From Epub", "Author", "highlight", "50", null, "2024", "text");
-        FyodorParseResult result = new FyodorParseResult(List.of(clipping), null, null, "Book From Epub");
+        FyodorParseResult result = new FyodorParseResult(List.of(clipping), null, null, "Book From Epub", null, null);
 
         try (var mocked = mockConstruction(FyodorClippingsParser.class, (mock, ctx) ->
-                when(mock.parse(eq(""), eq("Book From Epub"), isNull(), isNull())).thenReturn(result))) {
+                when(mock.parse(eq(""), eq("Book From Epub"), isNull())).thenReturn(result))) {
 
             PipelineContext ctx = new PipelineContext(null);
             ctx.epubTitle = "Book From Epub";
@@ -117,10 +117,10 @@ class ParseClippingsStepTest {
         AppArgs args = args(clippingsFile, "filter");
 
         Clipping clipping = new Clipping("Fallback Title", "Author", "note", "200", null, "2024", "note text");
-        FyodorParseResult result = new FyodorParseResult(List.of(clipping), null, null, null);
+        FyodorParseResult result = new FyodorParseResult(List.of(clipping), null, null, null, null, null);
 
         try (var mocked = mockConstruction(FyodorClippingsParser.class, (mock, ctx) ->
-                when(mock.parse(eq("filter"), isNull(), isNull(), isNull())).thenReturn(result))) {
+                when(mock.parse(eq("filter"), isNull(), isNull())).thenReturn(result))) {
 
             PipelineContext ctx = new PipelineContext(null);
             ctx.epubTitle = null;

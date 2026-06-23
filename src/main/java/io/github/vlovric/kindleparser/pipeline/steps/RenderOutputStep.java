@@ -10,6 +10,9 @@ import io.github.vlovric.kindleparser.pipeline.PipelineContext;
 import io.github.vlovric.kindleparser.pipeline.PipelineStep;
 import io.github.vlovric.kindleparser.pipeline.StepResult;
 
+/**
+ * Renders grouped clippings through the user's FreeMarker template and writes the output file.
+ */
 public class RenderOutputStep implements PipelineStep {
 
     private final AppArgs args;
@@ -39,6 +42,7 @@ public class RenderOutputStep implements PipelineStep {
         return StepResult.FINISH;
     }
 
+    /** Priority: matched book title from Fyodor → --title filter → book filename stem. */
     private String resolveTitle(PipelineContext ctx) {
         if (ctx.matchedBookTitle != null && !ctx.matchedBookTitle.isBlank()) {
             return ctx.matchedBookTitle;
@@ -54,6 +58,7 @@ public class RenderOutputStep implements PipelineStep {
         return "Output";
     }
 
+    /** Strips characters illegal in filenames on Windows/macOS/Linux so the path is safe on all platforms. */
     private Path resolveOutputPath(String title) {
         if (args.output() != null) {
             return args.output();

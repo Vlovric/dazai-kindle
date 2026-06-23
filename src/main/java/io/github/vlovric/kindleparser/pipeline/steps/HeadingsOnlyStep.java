@@ -14,6 +14,12 @@ import io.github.vlovric.kindleparser.pipeline.PipelineContext;
 import io.github.vlovric.kindleparser.pipeline.PipelineStep;
 import io.github.vlovric.kindleparser.pipeline.StepResult;
 
+/**
+ * Writes resolved headings with their Kindle locations to a file, then finishes the pipeline.
+ * When {@code --headings-only} is not set, this step is a no-op and the pipeline continues.
+ * Note: calibration is still required even for this step — {@link ResolveHeadingsStep} depends
+ * on the fit from {@link FitCalibrationStep} and runs before this step regardless (see Agent Insights §11).
+ */
 public class HeadingsOnlyStep implements PipelineStep {
 
     private final AppArgs args;
@@ -69,6 +75,7 @@ public class HeadingsOnlyStep implements PipelineStep {
         Files.writeString(outputPath, sb.toString(), StandardCharsets.UTF_8);
     }
 
+    /** Strips characters illegal in filenames on Windows/macOS/Linux so the path is safe on all platforms. */
     private static Path resolveOutputPath(AppArgs args, String title) {
         if (args.output() != null) {
             return args.output();
