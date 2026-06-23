@@ -9,6 +9,8 @@ public record FyodorParseResult(
         List<Clipping> clippings,
         Path outputDir,
         Path selectedFile,
-        String selectedBookTitle
+        String selectedBookTitle,
+        String fyodorStdout,
+        List<Path> outputFiles
 ) {
 }

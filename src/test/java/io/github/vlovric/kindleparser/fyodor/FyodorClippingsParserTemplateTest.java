@@ -27,7 +27,7 @@ class FyodorClippingsParserTemplateTest {
     @Test
     void setup_noExistingTemplate_createsFile() throws Exception {
         FyodorClippingsParser parser = new FyodorClippingsParser(Path.of("dummy.txt"), false);
-        parser.setupUserFyodorTemplate(configDir, null);
+        parser.setupUserFyodorTemplate(configDir);
 
         Path template = configDir.resolve("template.erb");
         assertTrue(Files.exists(template), "template.erb should have been created");
@@ -40,13 +40,13 @@ class FyodorClippingsParserTemplateTest {
     void setup_existingMatchingTemplate_noError() throws Exception {
         // Write the bundled template first to establish the "same content" baseline.
         FyodorClippingsParser parser = new FyodorClippingsParser(Path.of("dummy.txt"), false);
-        parser.setupUserFyodorTemplate(configDir, null);
+        parser.setupUserFyodorTemplate(configDir);
         Path template = configDir.resolve("template.erb");
         long mtime = Files.getLastModifiedTime(template).toMillis();
 
         // Second call with same content → should not throw and should not rewrite.
         Thread.sleep(10); // ensure mtime would differ if rewritten
-        parser.setupUserFyodorTemplate(configDir, null);
+        parser.setupUserFyodorTemplate(configDir);
 
         assertEquals(mtime, Files.getLastModifiedTime(template).toMillis(),
                 "File should not be rewritten when content already matches");
@@ -60,7 +60,7 @@ class FyodorClippingsParserTemplateTest {
 
         FyodorClippingsParser parser = new FyodorClippingsParser(Path.of("dummy.txt"), false);
         IOException ex = assertThrows(IOException.class,
-                () -> parser.setupUserFyodorTemplate(configDir, null));
+                () -> parser.setupUserFyodorTemplate(configDir));
         assertTrue(ex.getMessage().contains("--overwrite-fyodor-template"),
                 "Error message should tell user about the flag");
     }
@@ -72,7 +72,7 @@ class FyodorClippingsParserTemplateTest {
         Files.writeString(template, "completely different content", StandardCharsets.UTF_8);
 
         FyodorClippingsParser parser = new FyodorClippingsParser(Path.of("dummy.txt"), true);
-        assertDoesNotThrow(() -> parser.setupUserFyodorTemplate(configDir, null));
+        assertDoesNotThrow(() -> parser.setupUserFyodorTemplate(configDir));
 
         String newContent = Files.readString(template, StandardCharsets.UTF_8);
         assertNotEquals("completely different content", newContent,
