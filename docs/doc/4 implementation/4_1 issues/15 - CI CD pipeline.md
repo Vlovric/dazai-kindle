@@ -1,0 +1,1 @@
+Repository CI/CD pipeline with branch rules
