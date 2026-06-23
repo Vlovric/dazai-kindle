@@ -2,7 +2,7 @@ package io.github.vlovric.kindleparser.pipeline.steps;
 
 import java.io.FileWriter;
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
+import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
@@ -40,39 +40,36 @@ public class HeadingsOnlyStep implements PipelineStep {
         }
 
         String title = ctx.epubTitle != null ? ctx.epubTitle : deriveTitle(ctx);
-
         Path outputPath = resolveOutputPath(args, title);
+        Path templatePath = resolveTemplate(args.headingsTemplate());
+        boolean usingBundled = args.headingsTemplate() == null;
 
-        if (args.headingsTemplate() != null) {
-            renderWithTemplate(headings, title, args.headingsTemplate(), outputPath);
-        } else {
-            renderMarkdown(headings, title, outputPath);
+        try (FileWriter writer = new FileWriter(outputPath.toFile())) {
+            new TemplateRenderer(templatePath).renderHeadings(headings, title, writer);
+        } finally {
+            if (usingBundled) {
+                Files.deleteIfExists(templatePath);
+            }
         }
 
         System.out.println("[KindleParser] ✅ Headings written to " + outputPath.toAbsolutePath());
         return StepResult.FINISH;
     }
 
-    private static void renderWithTemplate(
-        List<Heading> headings,
-        String title,
-        Path templatePath,
-        Path outputPath
-    ) throws IOException {
-        try (FileWriter writer = new FileWriter(outputPath.toFile())) {
-            new TemplateRenderer(templatePath).renderHeadings(headings, title, writer);
+    /**
+     * Returns the user-provided template path, or extracts the bundled {@code headings_default.ftl}
+     * to a temp file. The caller is responsible for deleting the temp file when done.
+     */
+    private static Path resolveTemplate(Path userTemplate) throws IOException {
+        if (userTemplate != null) {
+            return userTemplate;
         }
-    }
-
-    private static void renderMarkdown(List<Heading> headings, String title, Path outputPath) throws IOException {
-        StringBuilder sb = new StringBuilder();
-        sb.append("# ").append(title).append("\n\n");
-        for (Heading h : headings) {
-            String prefix = "#".repeat(Math.min(h.level() + 1, 6));
-            sb.append(prefix).append(" ").append(h.title())
-              .append("  *(Location: ").append(h.location()).append(")*\n");
+        Path tmp = Files.createTempFile("headings_default_", ".ftl");
+        try (InputStream is = HeadingsOnlyStep.class.getResourceAsStream("/headings_default.ftl")) {
+            if (is == null) throw new IOException("Could not find /headings_default.ftl in resources");
+            Files.write(tmp, is.readAllBytes());
         }
-        Files.writeString(outputPath, sb.toString(), StandardCharsets.UTF_8);
+        return tmp;
     }
 
     /** Strips characters illegal in filenames on Windows/macOS/Linux so the path is safe on all platforms. */

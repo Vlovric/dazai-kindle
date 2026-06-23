@@ -12,7 +12,7 @@ KindleParser extracts highlights, notes, and bookmarks from a Kindle `My Clippin
 | `--output <path>` | No | Output file path. Default: `<Book Title>.md` (sanitised). |
 | `--title <string>` | No | Filter clippings by book title (case‑insensitive substring). Useful when `My Clippings.txt` contains multiple books. |
 | `--headings-only` | No | Print extracted headings with their computed Kindle locations and exit. Does not require clippings or template. Still requires `--calibrate`. |
-| `--headings-template <path>` | No | FreeMarker template for `--headings-only` output. If omitted, a default Markdown format is used (`## Title  *(Location: N)*`). |
+| `--headings-template <path>` | No | FreeMarker template for `--headings-only` output. If omitted, the bundled `headings_default.ftl` is used, which renders headings as a Markdown document (`## Title  *(Location: N)*`). |
 | `--debug` | No | Write intermediate artifacts to `./debug-runs/run-<timestamp>/`. Includes extracted EPUB, TOC JSON, resolved headings, Fyodor output, grouping stats. |
 | `--calibrate <file>` | **Mandatory** | Path to a calibration file (see format below). The file provides 2+ known heading‑location pairs to fit a linear mapping for this run. |
 | `--print-calibration-template <path>` | No | Generate a calibration template containing all TOC headings (indented, blank locations) and exit. User fills in Kindle locations and re‑runs with `--calibrate`. |
@@ -102,3 +102,14 @@ filename = "%{author} - %{title}.json"
 
 See the example `template.ftl` template.
 The output can be any file type.
+
+## Headings Template (FreeMarker)
+
+Used with `--headings-only --headings-template <path>`. If no template is provided, the bundled default is used.
+
+| Variable | Type | Description |
+| --- | --- | --- |
+| `title` | String | Book title |
+| `headings` | List of `TemplateHeading` | All resolved headings in reading order |
+
+`TemplateHeading` fields: `title`, `level` (1-based), `location`, `charOffset`, `file`, `anchor`.
