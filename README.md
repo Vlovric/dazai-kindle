@@ -1,5 +1,5 @@
-[![CI](https://img.shields.io/github/actions/workflow/status/Vlovric/dazai-kindle/ci.yml?branch=main&label=CI)](https://github.com/Vlovric/dazai-kindle/actions/workflows/ci.yml)
-[![License: Apache 2.0](https://img.shields.io/badge/License-Apache_2.0-yellow.svg)](https://www.apache.org/licenses/LICENSE-2.0)
+[![CI](https://github.com/Vlovric/dazai-kindle/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/Vlovric/dazai-kindle/actions/workflows/ci.yml)
+[![License: GPL-3.0](https://img.shields.io/badge/License-GPL_3.0-yellow.svg)](https://www.gnu.org/licenses/gpl-3.0.html)
 
 # dazai-kindle
 
@@ -97,6 +97,6 @@ See the [Usage Guide](docs/doc/6%20maintenance/6_1%20Usage%20Documentation.md) f
 
 ## License
 
-Licensed under the [Apache License 2.0](LICENSE).
+Licensed under the [GPL-3.0 license](LICENSE).
 
 Uses [Fyodor](https://github.com/rc2dev/fyodor) and [Calibre](https://calibre-ebook.com/) as external tools (invoked as subprocesses, not linked).
