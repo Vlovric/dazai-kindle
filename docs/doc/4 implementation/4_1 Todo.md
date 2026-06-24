@@ -2,8 +2,6 @@
 # Working on
 
 # 1.1. High prio
-- [ ] [[12 - Code docs]]
-- [ ] [[13 - Manual testing]]
 
 # 1.2. Medium prio
 - [ ] [[9 - Test suite]]

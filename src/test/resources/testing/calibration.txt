@@ -1,0 +1,230 @@
+# KindleParser calibration template
+# Fill in at least 2 locations, keep the rest blank.
+# Format: Title - 123
+
+About the authors - 
+
+Introduction - 
+
+  How to use this guide - 
+
+Chapter 1 What makes for a dream job? - 356
+
+  Where we go wrong - 
+  Two overrated goals for a fulfilling career - 
+  Money makes you happier, but only a little - 
+  Don't aim for low stress - 
+  What should you aim for in a dream job? - 
+  Recap - 
+  Should you just follow your passion? - 
+  Do what contributes - 
+  You could be more successful - 
+  It's the right thing to do - 
+  Conclusion - 
+
+Chapter 2 Can one person make a difference? What the evidence says. - 631
+
+  How much impact do doctors have? - 
+  Who were the highest-impact people in history? - 
+  What do these differences in impact mean for your career? - 
+  What does it mean to "make a difference"? - 
+  So how can you improve lives with your career? - 
+
+Chapter 3 Three ways anyone can make a difference, no matter their job - 753
+
+  Donating effectively - 
+  How is this possible? - 
+  What if you don't want to give money? How to help through effective political advocacy - 
+  Being a "multiplier" to help others be more effective - 
+  Conclusion: anyone can make a difference - 
+
+Chapter 4 Want to do good? Here's how to choose an area to focus on - 927
+
+  Look for the best balance of the factors - 
+  Your personal fit and expertise - 
+  So what are the world's most urgent problems? - 
+
+Chapter 5 The world's biggest problems and why they're not what first comes to mind - 
+
+  Why issues facing rich countries aren't always the most important - and why charity shouldn't always begin at home - 
+  Global health: a problem where you could really make progress - 
+  Why focusing on future generations might be even more effective than tackling global health - 
+  One way to help future generations: avert neglected existential risks - 
+  Dealing with uncertainty and "going meta" - 
+  How to work out which problems you should focus on - 
+
+Chapter 6 Which jobs help people the most? - 1404
+
+  Common objections to earning to give - 
+  More ideas for impactful careers - 
+  Which is the right approach for you? - 
+  Conclusion: in which job can you help the most? - 
+  Recap of our career guide so far - 
+  How can I put myself in the best position to get a high-impact job? - 
+
+Chapter 7 Which jobs put you in the best long-term position? - 1809
+
+  Why career capital is so important - 
+  Five components of career capital - 
+  How can you get the best career capital? Get good at something useful - 
+  Concrete steps for gaining career capital - 
+  Should you wait to have an impact? - 
+  How can you get career capital in any job? - 
+  Conclusion - 
+
+Chapter 8 How to find the right career for you - 2266
+
+  Being good at your job is more important than you think - 
+  Why introspection, going with your gut, and career tests don't work - 
+  What does work in predicting where you'll excel, according to the research? - 
+  How can you find a job that fits? Think like a scientist - 
+  How much should you explore in your career? - 
+  Conclusion - 
+
+Chapter 9 How to make your career plan - 2641
+
+  Don't "keep your options open" - 
+  The three key stages to a career - 
+  Have a longer-term vision - 
+  Spend longer planning your next steps - 
+  Working backwards: if you know your long-term vision, work out how to get there - 
+  Working forwards: look at the opportunities immediately in front of you - 
+  Have backup options: the ABZ plan - 
+  Set a review point - 
+
+Chapter 10 All the best advice we could find on how to get a job - 2902
+
+  How to get leads: don't just cold email your CV, use connections - 
+  How to get referrals - 
+  Recruiters and listings - 
+  When the process is highly standardised - 
+  Just do the work - 
+  How to prepare for interviews - 
+  Improve and adapt your process - 
+  Have a plan to stay motivated - 
+  Never job hunt again - 
+  Conclusion - 
+
+Chapter 11 One of the most powerful ways to improve your career - join a community - 
+
+  Why joining a community is so helpful - 
+  Finding the right community for you - 
+  How can the effective altruism community boost your career? - 
+  The entire guide, in one minute - 
+  What now? - 
+
+Appendix 1 - The meaning of making a difference - 
+
+  Definition - 
+  Why did we choose this definition? - 
+  How can you measure social impact? - 
+  Is social impact all that matters? - 
+  Further reading - 
+
+Appendix 2 - All the evidence-based advice we found on how to be more successful in any job - 
+
+  How to be successful: the compounding benefits of investing in yourself - 
+
+Appendix 3 - Four biases to avoid in career decisions - 
+
+Appendix 4 - How to make tough career decisions - 
+
+Appendix 5 - Is it ever OK to take a harmful job in order to do more good? An in-depth analysis - 
+
+  Which jobs might get ruled out? - 
+  What actions are ruled out? - 
+  Should you go into a harmful industry in order to make it better? - 
+  Conclusion - 
+  Further reading - 
+
+Appendix 6 - College advice - 
+
+  Priorities - 
+  Which degree subject? - 
+  How to spend your time while at college - 
+  Should you go to college at all? - 
+  Which type of university should you go to? - 
+  Further reading - 
+
+Appendix 7 - Additional resources - 
+
+  Resources for chapter - 
+  Resources for chapter - 
+  Resources for chapter - 
+
+Appendix 8 - Career review summaries - 
+
+  Academic research - 
+  Actuarial science - 
+  AI governance and coordination - 
+  AI safety technical research - 
+  Biomedical research - 
+  Biorisk research, strategy and policy - 
+  China-related AI safety and governance - 
+  China specialist - 
+  Computer science PhD - 
+  Congressional staffer - 
+  Data collection for AI alignment - 
+  Data science - 
+  Early-stage startup employee - 
+  Economics PhD - 
+  Engineering - 
+  Executive assistant (for someone doing especially high-impact work) - 
+  Expert in AI hardware - 
+  Forecasting and related research and implementation - 
+  Found a tech startup - 
+  Founder of new projects tackling top problems - 
+  Founding effective international development nonprofits - 
+  Grantmaker focused on pressing world problems - 
+  Helping build the effective altruism community - 
+  Historian of large societal trends, inflection points, progress or collapse - 
+  Information security in high-impact areas - 
+  Journalism - 
+  Law school (in the US) - 
+  Machine learning PhD - 
+  Management consulting - 
+  Marketing - 
+  Medical careers - 
+  Non-technical roles in leading AI labs - 
+  Nursing - 
+  Operations management in high-impact organisations - 
+  Philosophy PhD - 
+  Product manager - 
+  Program manager in international organisations - 
+  Public intellectual - 
+  Pursuing fame in art and entertainment - 
+  Quantitative trading - 
+  Research and advocacy promoting impactful climate solutions - 
+  Research into global priorities - 
+  Research management - 
+  Software engineering - 
+  Specialist in emerging global powers - 
+  Teaching - 
+  Think tank research - 
+  Web designer - 
+  Working at effective nonprofits - 
+
+Appendix 9 - Problem profile summaries - 
+
+  AI-related catastrophe - 
+  Artificial sentience - 
+  Atomically precise manufacturing - 
+  Building effective altruism - 
+  Catastrophic pandemics - 
+  Climate change - 
+  Easily preventable or treatable illness - 
+  Factory farming - 
+  Global priorities research - 
+  Great power conflict - 
+  Improving decision making (especially in important institutions) - 
+  Mental health - 
+  Nuclear war - 
+  Space governance - 
+  Stable totalitarianism - 
+  Wild animal suffering - 
+
+Notes - 
+
+Bibliography - 
+
+Index - 
