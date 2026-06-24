@@ -4,8 +4,8 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
-    <groupId>io.github.vlovric.kindleparser</groupId>
-    <artifactId>kindle-parser</artifactId>
+    <groupId>io.github.vlovric.dazaikindle</groupId>
+    <artifactId>dazai-kindle</artifactId>
     <version>1.0.0</version>
 
     <properties>
@@ -39,7 +39,7 @@
                             <createDependencyReducedPom>false</createDependencyReducedPom>
                             <transformers>
                                 <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
-                                    <mainClass>io.github.vlovric.kindleparser.Main</mainClass>
+                                    <mainClass>io.github.vlovric.dazaikindle.Main</mainClass>
                                 </transformer>
                             </transformers>
                         </configuration>

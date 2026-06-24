@@ -1,4 +1,4 @@
-# KindleParser calibration template
+# DazaiKindle calibration template
 # Fill in at least 2 locations, keep the rest blank.
 # Format: Title - 123
 

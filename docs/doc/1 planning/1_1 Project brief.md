@@ -1,4 +1,4 @@
-# Project name: KindleParser
+# Project name: DazaiKindle
 # 1. Purpose
 The purpose of this system is to provide a way to locally parse Kindle reading highlights and notes along with the Table of Content structure and positioning for each highlight and note. The system also provides a templating mechanism to template the output of the system to suit various needs.
 # 2. Scope

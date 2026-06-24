@@ -1,4 +1,4 @@
-# KindleParser – Development Plan & Next Steps
+# DazaiKindle – Development Plan & Next Steps
 
 ## Completed
 

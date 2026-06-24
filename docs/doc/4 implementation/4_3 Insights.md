@@ -1,4 +1,4 @@
-# KindleParser – Agent Insights (Gotchas & Lessons)
+# DazaiKindle – Agent Insights (Gotchas & Lessons)
 
 **Always keep these in mind when modifying the code.**
 

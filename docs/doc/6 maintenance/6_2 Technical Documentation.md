@@ -1,4 +1,4 @@
-# KindleParser – Technical Documentation
+# DazaiKindle – Technical Documentation
 
 ## High-Level Flow
 ```mermaid

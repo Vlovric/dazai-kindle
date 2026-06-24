@@ -1,13 +1,13 @@
-[![CI](https://img.shields.io/github/actions/workflow/status/Vlovric/dazai-kindle/ci.yml?branch=main&label=CI)](https://github.com/Vlovric/KindleParser/actions/workflows/ci.yml)
+[![CI](https://img.shields.io/github/actions/workflow/status/Vlovric/dazai-kindle/ci.yml?branch=main&label=CI)](https://github.com/Vlovric/dazai-kindle/actions/workflows/ci.yml)
 [![License: Apache 2.0](https://img.shields.io/badge/License-Apache_2.0-yellow.svg)](https://www.apache.org/licenses/LICENSE-2.0)
 
-# KindleParser
+# dazai-kindle
 
 Export your Kindle highlights and notes into any format you want, with your headings resolved to the correct chapters.
 
 ## What it does
 
-Kindle's `My Clippings.txt` gives you highlights and notes but no chapter information — entries are just raw text with a location number. KindleParser bridges that gap: it parses your eBook's table of contents, uses a small calibration step to map Kindle locations to chapters, and groups your clippings under the correct headings. The result is rendered through a [FreeMarker](https://freemarker.apache.org/) template you write, so the output format is entirely up to you.
+Kindle's `My Clippings.txt` gives you highlights and notes but no chapter information — entries are just raw text with a location number. dazai-kindle bridges that gap: it parses your eBook's table of contents, uses a small calibration step to map Kindle locations to chapters, and groups your clippings under the correct headings. The result is rendered through a [FreeMarker](https://freemarker.apache.org/) template you write, so the output format is entirely up to you.
 
 **This tool is for you if you:**
 - Want to export Kindle clippings locally, without cloud services or subscriptions
@@ -34,11 +34,11 @@ Kindle's `My Clippings.txt` gives you highlights and notes but no chapter inform
 
 ## Installation
 
-Download the latest `kindle-parser-*.jar` from [Releases](https://github.com/Vlovric/dazai-kindle/releases) and run it with `java -jar`.
+Download the latest `dazai-kindle-*.jar` from [Releases](https://github.com/Vlovric/dazai-kindle/releases) and run it with `java -jar`.
 
 ## How it works
 
-KindleParser has three modes that you run in order for a new book:
+dazai-kindle has three modes that you run in order for a new book:
 
 | Step | Mode | Purpose |
 |------|------|---------|
@@ -49,7 +49,7 @@ KindleParser has three modes that you run in order for a new book:
 ### Step 1 — Generate calibration template
 
 ```bash
-java -jar kindle-parser.jar \
+java -jar dazai-kindle.jar \
   --book book.epub \
   --print-calibration-template calib.txt
 ```
@@ -59,7 +59,7 @@ Opens the book, extracts the table of contents, and writes `calib.txt` with all 
 ### Step 2 — Check heading locations
 
 ```bash
-java -jar kindle-parser.jar \
+java -jar dazai-kindle.jar \
   --book book.epub \
   --calibrate calib.txt \
   --headings-only
@@ -70,7 +70,7 @@ Fits a calibration model from your filled-in values and resolves locations for e
 ### Step 3 — Export clippings
 
 ```bash
-java -jar kindle-parser.jar \
+java -jar dazai-kindle.jar \
   --book book.epub \
   --calibrate calib.txt \
   --clippings "My Clippings.txt" \

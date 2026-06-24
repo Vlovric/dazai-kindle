@@ -1,6 +1,6 @@
-# KindleParser – Usage Guide
+# DazaiKindle – Usage Guide
 
-KindleParser extracts highlights, notes, and bookmarks from a Kindle clippings file, matches them to the correct sections of an eBook, and renders a report using a custom FreeMarker template.
+DazaiKindle extracts highlights, notes, and bookmarks from a Kindle clippings file, matches them to the correct sections of an eBook, and renders a report using a custom FreeMarker template.
 
 ---
 
@@ -253,7 +253,7 @@ Delimiters supported: ` - `, ` – ` (en-dash), ` — ` (em-dash), `: `.
 Title matching is normalised (lowercase, non-alphanumeric → spaces) and tries exact → prefix → contains.
 
 ```
-# KindleParser calibration template
+# DazaiKindle calibration template
 # Fill in at least 2 locations, keep the rest blank.
 # Format: Title - 123
 

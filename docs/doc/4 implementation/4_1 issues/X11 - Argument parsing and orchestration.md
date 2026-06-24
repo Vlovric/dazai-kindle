@@ -1,4 +1,4 @@
-# KindleParser — Current Flow & New Pipeline Design
+# DazaiKindle — Current Flow & New Pipeline Design
 
 ---
 
