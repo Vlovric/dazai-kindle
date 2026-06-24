@@ -7,8 +7,8 @@ KindleParser extracts highlights, notes, and bookmarks from a Kindle clippings f
 ## Prerequisites
 
 - **Java 21+** on PATH
-- **Calibre** (`ebook-convert`) on PATH — required only when the book is `.azw3` or `.mobi`
-- **Fyodor** Ruby gem (`fyodor`) on PATH — required for parsing Kindle clippings
+- [**Calibre**](https://calibre-ebook.com/download) (`ebook-convert`) on PATH — required only when the book is `.azw3` or `.mobi`
+- [**Fyodor**](https://github.com/rc2dev/fyodor) Ruby gem (`fyodor`) on PATH — required for parsing Kindle clippings
 - A configured `~/.config/fyodor/fyodor.toml` with an `[output]` section
 
 ```toml
