@@ -3,10 +3,12 @@ package io.github.vlovric.kindleparser.integration;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.github.vlovric.kindleparser.AppArgs;
 import io.github.vlovric.kindleparser.calibration.CalibrationFitter;
+import io.github.vlovric.kindleparser.calibre.BookPreprocessor;
 import io.github.vlovric.kindleparser.fyodor.FyodorClippingsParser;
 import io.github.vlovric.kindleparser.fyodor.FyodorParseResult;
 import io.github.vlovric.kindleparser.models.Clipping;
 import io.github.vlovric.kindleparser.models.Heading;
+import io.github.vlovric.kindleparser.models.TocEntry;
 import io.github.vlovric.kindleparser.pipeline.Pipeline;
 import io.github.vlovric.kindleparser.pipeline.PipelineContext;
 import io.github.vlovric.kindleparser.pipeline.steps.*;
@@ -279,6 +281,159 @@ class PipelineIntegrationTest {
         }
     }
 
+    /** FR03_01-EC_02: template file has no read permission — RenderOutputStep throws IOException. */
+    @Test
+    void renderOutput_unreadableTemplate_throwsIOException() throws Exception {
+        assumeUnix();
+
+        Path templateFile = tempDir.resolve("template.ftl");
+        Files.writeString(templateFile, "${title}");
+        templateFile.toFile().setReadable(false);
+
+        PipelineContext ctx = new PipelineContext(null);
+        ctx.matchedBookTitle = "Test Book";
+        ctx.groups = List.of();
+
+        AppArgs args = new AppArgs(
+            Path.of("book.epub"), null, "", templateFile, tempDir.resolve("output.md"),
+            false, null, false, null, null, false
+        );
+
+        try {
+            assertThrows(IOException.class, () -> new RenderOutputStep(args).execute(ctx));
+        } finally {
+            templateFile.toFile().setReadable(true);
+        }
+    }
+
+    /** FR03_01-EC_04: output directory has no write permission — RenderOutputStep throws IOException. */
+    @Test
+    void renderOutput_readOnlyOutputDir_throwsIOException() throws Exception {
+        assumeUnix();
+
+        Path templateFile = tempDir.resolve("template.ftl");
+        Files.writeString(templateFile, "${title}");
+
+        Path readOnlyDir = tempDir.resolve("readonly");
+        Files.createDirectories(readOnlyDir);
+        readOnlyDir.toFile().setWritable(false);
+
+        PipelineContext ctx = new PipelineContext(null);
+        ctx.matchedBookTitle = "Test Book";
+        ctx.groups = List.of();
+
+        AppArgs args = new AppArgs(
+            Path.of("book.epub"), null, "", templateFile, readOnlyDir.resolve("output.md"),
+            false, null, false, null, null, false
+        );
+
+        try {
+            assertThrows(IOException.class, () -> new RenderOutputStep(args).execute(ctx));
+        } finally {
+            readOnlyDir.toFile().setWritable(true);
+        }
+    }
+
+    /** FR03_02-EC_03: custom headings template has no read permission — HeadingsOnlyStep throws IOException. */
+    @Test
+    void headingsOnly_unreadableCustomTemplate_throwsIOException() throws Exception {
+        assumeUnix();
+
+        Path templateFile = tempDir.resolve("headings.ftl");
+        Files.writeString(templateFile, "${title}");
+        templateFile.toFile().setReadable(false);
+
+        Heading fakeHeading = new Heading(new TocEntry("Chapter 1", "c1.html", null, 1), 0, 100);
+        PipelineContext ctx = new PipelineContext(null);
+        ctx.epubTitle = "Test Book";
+        ctx.resolvedHeadings = List.of(fakeHeading);
+
+        AppArgs args = new AppArgs(
+            Path.of("book.epub"), null, "", null, tempDir.resolve("headings.md"),
+            true, templateFile, false, null, null, false
+        );
+
+        try {
+            assertThrows(IOException.class, () -> new HeadingsOnlyStep(args).execute(ctx));
+        } finally {
+            templateFile.toFile().setReadable(true);
+        }
+    }
+
+    /** FR03_02-EC_05: headings output directory has no write permission — HeadingsOnlyStep throws IOException. */
+    @Test
+    void headingsOnly_readOnlyOutputDir_throwsIOException() throws Exception {
+        assumeUnix();
+
+        Path templateFile = tempDir.resolve("headings.ftl");
+        Files.writeString(templateFile, "${title}");
+
+        Path readOnlyDir = tempDir.resolve("readonly");
+        Files.createDirectories(readOnlyDir);
+        readOnlyDir.toFile().setWritable(false);
+
+        Heading fakeHeading = new Heading(new TocEntry("Chapter 1", "c1.html", null, 1), 0, 100);
+        PipelineContext ctx = new PipelineContext(null);
+        ctx.epubTitle = "Test Book";
+        ctx.resolvedHeadings = List.of(fakeHeading);
+
+        AppArgs args = new AppArgs(
+            Path.of("book.epub"), null, "", null, readOnlyDir.resolve("headings.md"),
+            true, templateFile, false, null, null, false
+        );
+
+        try {
+            assertThrows(IOException.class, () -> new HeadingsOnlyStep(args).execute(ctx));
+        } finally {
+            readOnlyDir.toFile().setWritable(true);
+        }
+    }
+
+    /** FR04_01-EC_03: calibration template output directory has no write permission — step throws IOException. */
+    @Test
+    void printCalibrationTemplate_readOnlyOutputDir_throwsIOException() throws Exception {
+        assumeUnix();
+
+        Path readOnlyDir = tempDir.resolve("readonly");
+        Files.createDirectories(readOnlyDir);
+        readOnlyDir.toFile().setWritable(false);
+
+        PipelineContext ctx = new PipelineContext(null);
+        ctx.tocEntries = List.of(new TocEntry("Chapter 1", "c1.html", null, 1));
+
+        AppArgs args = new AppArgs(
+            Path.of("book.epub"), null, "", null, null,
+            false, null, false, null, readOnlyDir.resolve("calib.txt"), false
+        );
+
+        try {
+            assertThrows(IOException.class, () -> new PrintCalibrationTemplateStep(args).execute(ctx));
+        } finally {
+            readOnlyDir.toFile().setWritable(true);
+        }
+    }
+
+    /** FR02_01-EC_06: book's output directory has no write permission — Calibre exits non-zero and BookPreprocessor throws IOException. */
+    @Test
+    void preprocessBook_readOnlyOutputDir_throwsIOException() throws Exception {
+        assumeUnix();
+        assumeTrue(isCalibreAvailable(), "Calibre not installed — skipping");
+        Path bookSrc = resourcePath("testing/book.azw3");
+        assumeTrue(Files.exists(bookSrc), "Testing fixture book.azw3 not present — skipping");
+
+        Path bookDir = tempDir.resolve("bookdir");
+        Files.createDirectories(bookDir);
+        Path bookCopy = bookDir.resolve("book.azw3");
+        Files.copy(bookSrc, bookCopy);
+        bookDir.toFile().setWritable(false);
+
+        try {
+            assertThrows(IOException.class, () -> BookPreprocessor.preprocess(bookCopy));
+        } finally {
+            bookDir.toFile().setWritable(true);
+        }
+    }
+
     // --- helpers ---
 
     private static Path resourcePath(String relativePath) {
@@ -318,5 +473,18 @@ class PipelineIntegrationTest {
     private static String normalizeTitle(String s) {
         if (s == null) return "";
         return s.toLowerCase().replaceAll("[^a-z0-9]+", " ").trim().replaceAll("\\s+", " ");
+    }
+
+    private static void assumeUnix() {
+        assumeTrue(!System.getProperty("os.name", "").toLowerCase().contains("win"),
+                "Permission-based test requires a Unix-like OS");
+    }
+
+    private static boolean isCalibreAvailable() {
+        try {
+            return new ProcessBuilder("ebook-convert", "--version").start().waitFor() == 0;
+        } catch (Exception e) {
+            return false;
+        }
     }
 }
