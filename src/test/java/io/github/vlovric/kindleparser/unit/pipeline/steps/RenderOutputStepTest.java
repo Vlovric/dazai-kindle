@@ -110,7 +110,6 @@ class RenderOutputStepTest {
         Path templateFile = tempDir.resolve("test.ftl");
         Files.writeString(templateFile, "${title}", StandardCharsets.UTF_8);
 
-        // Run from tempDir so the derived relative path lands inside it
         AppArgs args = new AppArgs(
             tempDir.resolve("book.epub"), null, "", templateFile,
             null, false, null, false, null, null, false
@@ -120,8 +119,13 @@ class RenderOutputStepTest {
         ctx.bookPath = tempDir.resolve("book.epub");
         new RenderOutputStep(args).execute(ctx);
 
-        // Relative path is resolved against the JVM working dir; just assert no exception.
-        // (Full path assertion would be fragile on different CWDs.)
+        Path derived = Path.of("My Great Book.md");
+        try {
+            assertTrue(Files.exists(derived), "Derived output file not created");
+            assertEquals("My Great Book", Files.readString(derived).trim());
+        } finally {
+            Files.deleteIfExists(derived);
+        }
     }
 
     /** HP_01: special characters in title are sanitized in derived filename. */
