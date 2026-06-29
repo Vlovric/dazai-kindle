@@ -26,5 +26,7 @@ jobs:
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          files: target/dazai-kindle-*.jar
+          files: |
+            cli/target/dazai-kindle-cli-*.jar
+            server/target/dazai-kindle-server-*.jar
           generate_release_notes: true
