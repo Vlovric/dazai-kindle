@@ -8,377 +8,575 @@
 - Authorization rules: **all endpoints public**
 - Error format:
 - - -
-**Dashboard**
-~~- get stats
-	- highlight number
-	- entry number
-	- last run time~~
-**Paths**
-~~- get path
-	- type
-	- path~~
-~~- change path
-	- change path for type~~
-**Templates**
-~~- get templates
-	- name
-	- last modified~~
-~~- filter templates by type
-	- output / heading~~
-~~- sort templates
-	- by name
-	- by last modified~~
-- ~~pagination for templates~~
-- ~~upload new template~~
-	- ~~saves to filesystem~~
-- ~~delete one or more templates~~
-- ~~export one or more templates~~
-**Chosen template**
-- ~~get the template~~
-	- ~~name~~
-	- ~~content~~
-- ~~render template content~~
-- ~~delete template~~
-- ~~export template~~
-**Library**
-- ~~get book collections (folders)~~
-	- name
-	- author
-	- no. of highlights
-	- date modified
-- ~~search books
-- ~~paginating of books
-- ~~sort books
-	- by name
-	- by author
-	- by no. of highlights
-	- by date modified
-- ~~delete one or more collections
-- ~~export one or more collections
-**Chosen book**
-- ~~get book information
-	- name
-	- author
-	- no. of highlights
-	- date modified
-- ~~get all artifacts in book collection
-	- book name and format and location(?)
-	- calibration file name and format and location(?)
-	- output file name and format and location(?)
-	- headings only output name and format and location(?)
-	- debug run name and format and location(?)
-- ~~delete one or more artifacts
-- ~~export one or more artifacts
-**Clippings file**
-- ~~get information
-	- date of upload
-	- path
-**Configure new full run**
-- ~~upload new book file
-- ~~upload new calibration file
-- ~~upload new clippings file
-- ~~upload new output template file
-- ~~extract book
-	- paths to all uploaded files(?)
-	- title of book
-	- debug mode boolean
-	- overwrite fyodor template boolean
-**Select book file modal**
-- ~~get books
-	- title
-	- probably path
-- ~~search books by name
-- ~~pagination with "Load more"~~
-**Select calibration file modal**
-- ~~get calibration files
-	- title
-	- probably path
-- ~~search files by name
-- ~~pagination with "Load more"
-**Generate calibration file**
-- ~~upload new book file
-- ~~generate file
-	- book path
-	- debug mode boolean
-**Configure New Headings Only Run**
-- ~~upload new book file
-- ~~upload new calibration file
-- ~~upload new headings output template file
-- ~~extract
-	- paths of all uploaded/chosen files (?)
-	- debug mode boolean
-- - -
-**Resources**
-
-**stats**
-GET /stats
-- returns 
-	- highlight number
-	- entry number
-	- last run time
-
-**paths**
-GET /paths
-- returns
-	- list of folders, for each
-		- path
-		- name
-PUT /paths/{name}
-- receives
-	- name of folder
-	- new path (from OS picker)
-- returns
-	- new path
-
-**templates**
-GET /templates?type=&sort=&page=
-- receives
-	- type for filter (output/heading)
-	- sort criteria (desc asc support also) (by name/by last modified)
-	- page number
-- returns
-	- list of templates, for each
-		- name
-		- last modified
-		- type
-POST /templates
-- receives
-	- chosen file from picker
-- saves file to filesystem
-- returns
-	- new template object
-		- template name
-		- template last modofied
-		- template type
-DELETE /templates?names=
-- receives
-	- list of template names
-- deletes from filesystem
-GET /templates/export?names=
-- receives
-	- list of template names
-- provides file for download (one template or .zip)
-GET /templates/{name}
-- receives
-	- template name
-- returns
-	- template name
-	- template content
-POST /templates/preview
-- receives
-	- template content
-- returns
-	- render
-
-**runs**
-GET /runs?search=&page=&sort=
-- receives
-	- search text
-	- page
-	- sort criteria (asc desc support) (name/author/highlight no./date modified)
-- returns
-	- previous runs (folders), for each run
-		- name
-		- author
-		- no. of highlights
-		- date modified
-DELETE /runs?names=
-- receives
-	- list of run names
-- deletes from filesystem
-GET /runs/export?names=
-- receives
-	- list of run names
-- provides file for download (since it's a folder maybe it's a zip by default? Also if multiple)
-GET /runs/{name}
-- returns
-	- book name
-	- author
-	- no. of highlights
-	- date modified
-	- list of artifacts
-		- book
-			- name
-			- format
-			- location
-		- calibration file
-			- name
-			- format
-			- location
-		- output template
-			- name
-			- format
-			- location
-		- headings only output template
-			- name
-			- format
-			- location
-		- debug run
-			- name
-			- format
-			- location
-DELETE /runs/{name}/artifacts?names=
-- receives
-	- run name
-	- list of artifact types
-- deletes from filesystem
-GET /runs/{name}/export?artifacts=
-- receives
-	- run name
-	- list of artifact types
-- provides file for download (.zip if multiple files, debug folder is .zip by default?)
-
-**clippings**
-GET /clippings
-- returns
-	- file name
-	- date of upload
-	- path
-
-**files**
-POST /files/book
-- returns
-	- reference/path
-	- name
-POST /files/calibration
-- returns
-	- reference/path
-	- name
-POST /files/clippings
-- returns
-	- reference/path
-	- name
-POST /files/template
-- returns
-	- reference/path
-	- name
-POST /files/headingsTemplate
-- returns
-	- reference/path
-	- name
-GET /files?type=&search=&page=
-- receives
-	- file type (book/calibration file)
-	- search text
-	- page number
-- returns
-	- file title
-
-**execute**
-POST /execute/full
-- receives body with
-	- book path
-	- calibration file path
-	- clippings file path
-	- output template path
-	- book title (optional)
-	- debug mode boolean
-	- overwrite fyodor template boolean
-- returns
-	- run ID
-POST /execute/generate
-- receives body with
-	- book path
-	- debug mode boolean
-- returns
-	- run ID
-POST /execute/headings
-- receives body with
-	- book path
-	- calibration file path
-	- headings output template path
-	- debug mode boolean
-- returns
-	- run ID
-GET /execute/{runID}/logs
-- receives
-	- run ID
-- returns
-	- SSE stream
-- - -
 # stats
 ## GET /stats
 
 | **Purpose:**          | Fetching all statistics for dashboard             |
 | --------------------- | ------------------------------------------------- |
-| **Authentication:**   |                                                   |
-| **Request payload:**  |                                                   |
+| **Authentication:**   | `PUBLIC`                                          |
+| **Request payload:**  | —                                                 |
 | **Response payload:** | highlight number<br>entry number<br>last run time |
+
 ### Success response
 
-| **Code:** | 200 |
-| --------- | --- |
-| **Data:** |     |
+| **Code:** | 200                                                                             |
+| --------- | ------------------------------------------------------------------------------- |
+| **Data:** | `{ highlightCount: number, entryCount: number, lastRunTime: timestamp \| null}` |
+
+- - -
 # paths
 ## GET /paths
 
-| **Purpose:**          | Fetching all folders with their paths and information |
-| --------------------- | ----------------------------------------------------- |
-| **Authentication:**   |                                                       |
-| **Request payload:**  |                                                       |
-| **Response payload:** | list of folders, for each:<br>- name<br>- path        |
+| **Purpose:**          | Fetching all configured filesystem paths   |
+| --------------------- | ------------------------------------------ |
+| **Authentication:**   | `PUBLIC`                                   |
+| **Request payload:**  | —                                          |
+| **Response payload:** | list of folders, for each:<br>- name<br>- path |
+
+### Success response
+
+| **Code:** | 200                      |
+| --------- | ------------------------ |
+| **Data:** | `[{ name, path }]`       |
+
+- - -
+## PUT /paths/{name}
+
+| **Purpose:**          | Updating the filesystem path for a given folder |
+| --------------------- | ----------------------------------------------- |
+| **Authentication:**   | `PUBLIC`                                        |
+| **Request payload:**  | `{ path: string }`                              |
+| **Response payload:** | Updated path configuration                      |
+
+### Success response
+
+| **Code:** | 200                |
+| --------- | ------------------ |
+| **Data:** | `{ name, path }`   |
+
+### Error response
+
+| **Scenario:** | Path name not found |
+| ------------- | ------------------- |
+| **Code:**     | 404                 |
+| **Data:**     | —                   |
+
+- - -
+# templates
+## GET /templates
+
+| **Purpose:**          | Fetching a paginated, filtered and sorted list of templates           |
+| --------------------- | --------------------------------------------------------------------- |
+| **Authentication:**   | `PUBLIC`                                                              |
+| **Request payload:**  | `?type=output\|heading&sort=name\|lastModified&order=asc\|desc&page=` |
+| **Response payload:** | paginated list of templates                                           |
+
+### Success response
+
+| **Code:** | 200                                                                              |
+| --------- | -------------------------------------------------------------------------------- |
+| **Data:** | `{ templates: [{ name, type, lastModified }], totalPages, currentPage }`         |
+
+### Error response
+
+| **Scenario:** | Invalid type or sort value |
+| ------------- | -------------------------- |
+| **Code:**     | 400                        |
+| **Data:**     | —                          |
+
+- - -
+## POST /templates
+
+| **Purpose:**          | Uploading a new template file to the filesystem |
+| --------------------- | ----------------------------------------------- |
+| **Authentication:**   | `PUBLIC`                                        |
+| **Request payload:**  | `multipart/form-data` — template file           |
+| **Response payload:** | Created template metadata                       |
+
+### Success response
+
+| **Code:** | 201                            |
+| --------- | ------------------------------ |
+| **Data:** | `{ name, type, lastModified }` |
+
+### Error response
+
+| **Scenario:** | Invalid file type                      |
+| ------------- | -------------------------------------- |
+| **Code:**     | 400                                    |
+| **Data:**     | —                                      |
+
+| **Scenario:** | Template with same name already exists |
+| ------------- | -------------------------------------- |
+| **Code:**     | 409                                    |
+| **Data:**     | —                                      |
+
+- - -
+## DELETE /templates
+
+| **Purpose:**          | Deleting one or more templates from the filesystem |
+| --------------------- | -------------------------------------------------- |
+| **Authentication:**   | `PUBLIC`                                           |
+| **Request payload:**  | `?names=foo,bar`                                   |
+| **Response payload:** | —                                                  |
+
+### Success response
+
+| **Code:** | 204 |
+| --------- | --- |
+| **Data:** | —   |
+
+### Error response
+
+| **Scenario:** | One or more template names not found |
+| ------------- | ------------------------------------ |
+| **Code:**     | 404                                  |
+| **Data:**     | —                                    |
+
+- - -
+## GET /templates/export
+
+| **Purpose:**          | Downloading one or more templates; returns .zip if multiple |
+| --------------------- | ----------------------------------------------------------- |
+| **Authentication:**   | `PUBLIC`                                                    |
+| **Request payload:**  | `?names=foo,bar`                                            |
+| **Response payload:** | File or .zip download                                       |
+
+### Success response
+
+| **Code:** | 200                                               |
+| --------- | ------------------------------------------------- |
+| **Data:** | File download (`Content-Disposition: attachment`) |
+
+### Error response
+
+| **Scenario:** | One or more template names not found |
+| ------------- | ------------------------------------ |
+| **Code:**     | 404                                  |
+| **Data:**     | —                                    |
+
+- - -
+## GET /templates/{name}
+
+| **Purpose:**          | Fetching the raw content of a single template |
+| --------------------- | --------------------------------------------- |
+| **Authentication:**   | `PUBLIC`                                      |
+| **Request payload:**  | —                                             |
+| **Response payload:** | Template name and content                     |
+
+### Success response
+
+| **Code:** | 200                 |
+| --------- | ------------------- |
+| **Data:** | `{ name, content }` |
+
+### Error response
+
+| **Scenario:** | Template not found |
+| ------------- | ------------------ |
+| **Code:**     | 404                |
+| **Data:**     | —                  |
+
+- - -
+## POST /templates/preview
+
+| **Purpose:**          | Rendering template content using example entries |
+| --------------------- | ------------------------------------------------ |
+| **Authentication:**   | `PUBLIC`                                         |
+| **Request payload:**  | `{ content: string }`                            |
+| **Response payload:** | Rendered output or error                         |
+
+### Success response
+
+| **Code:** | 200                    |
+| --------- | ---------------------- |
+| **Data:** | `{ rendered: string }` |
+
+### Error response
+
+| **Scenario:** | Template content could not be rendered |
+| ------------- | -------------------------------------- |
+| **Code:**     | 422                                    |
+| **Data:**     | Error message                          |
+
+- - -
+# runs
+## GET /runs
+
+| **Purpose:**          | Fetching a paginated, sorted and searchable list of past runs                        |
+| --------------------- | ------------------------------------------------------------------------------------ |
+| **Authentication:**   | `PUBLIC`                                                                             |
+| **Request payload:**  | `?search=&sort=name\|author\|highlights\|lastModified&order=asc\|desc&page=`         |
+| **Response payload:** | Paginated list of runs                                                               |
+
+### Success response
+
+| **Code:** | 200                                                                                   |
+| --------- | ------------------------------------------------------------------------------------- |
+| **Data:** | `{ runs: [{ name, author, highlightCount, lastModified }], totalPages, currentPage }` |
+
+### Error response
+
+| **Scenario:** | Invalid sort value |
+| ------------- | ------------------ |
+| **Code:**     | 400                |
+| **Data:**     | —                  |
+
+- - -
+## DELETE /runs
+
+| **Purpose:**          | Deleting one or more runs and all their artifacts from the filesystem |
+| --------------------- | --------------------------------------------------------------------- |
+| **Authentication:**   | `PUBLIC`                                                              |
+| **Request payload:**  | `?names=Dazai,Kafka`                                                  |
+| **Response payload:** | —                                                                     |
+
+### Success response
+
+| **Code:** | 204 |
+| --------- | --- |
+| **Data:** | —   |
+
+### Error response
+
+| **Scenario:** | One or more run names not found |
+| ------------- | ------------------------------- |
+| **Code:**     | 404                             |
+| **Data:**     | —                               |
+
+- - -
+## GET /runs/export
+
+| **Purpose:**          | Downloading one or more runs as a .zip            |
+| --------------------- | ------------------------------------------------- |
+| **Authentication:**   | `PUBLIC`                                          |
+| **Request payload:**  | `?names=Dazai,Kafka`                              |
+| **Response payload:** | .zip file download                                |
+
+### Success response
+
+| **Code:** | 200                                               |
+| --------- | ------------------------------------------------- |
+| **Data:** | .zip download (`Content-Disposition: attachment`) |
+
+### Error response
+
+| **Scenario:** | One or more run names not found |
+| ------------- | ------------------------------- |
+| **Code:**     | 404                             |
+| **Data:**     | —                               |
+
+- - -
+## GET /runs/{name}
+
+| **Purpose:**          | Fetching metadata and artifact list for a single run |
+| --------------------- | ---------------------------------------------------- |
+| **Authentication:**   | `PUBLIC`                                             |
+| **Request payload:**  | —                                                    |
+| **Response payload:** | Run detail with all artifacts                        |
+
 ### Success response
 
 | **Code:** | 200 |
 | --------- | --- |
-| **Data:** |     |
+| **Data:** | `{ name, author, highlightCount, lastModified, artifacts: { book, calibration, output, headingsOutput, debugRun } }` each artifact: `{ name, format, location }` |
+
 ### Error response
 
-| **Scenario:** |     |
-| ------------- | --- |
-| **Code:**     |     |
-| **Data:**     |     |
-
-| **Scenario:** |     |
-| ------------- | --- |
-| **Code:**     |     |
-| **Data:**     |     |
+| **Scenario:** | Run not found |
+| ------------- | ------------- |
+| **Code:**     | 404           |
+| **Data:**     | —             |
 
 - - -
-# Endpoints
-## path of endpoint
+## DELETE /runs/{name}/artifacts
 
-| **Purpose:**          |                    |
-| --------------------- | ------------------ |
-| **Authentication:**   | `PUBLIC/PROTECTED` |
-| **Request payload:**  |                    |
-| **Response payload:** |                    |
+| **Purpose:**          | Deleting one or more artifacts from a run |
+| --------------------- | ----------------------------------------- |
+| **Authentication:**   | `PUBLIC`                                  |
+| **Request payload:**  | `?names=book,calibration`                 |
+| **Response payload:** | —                                         |
+
 ### Success response
 
-| **Code:**             |     |
-| --------------------- | --- |
-| **Data:**             |     |
+| **Code:** | 204 |
+| --------- | --- |
+| **Data:** | —   |
+
 ### Error response
 
-| **Scenario:** |     |
-| ------------- | --- |
-| **Code:**     |     |
-| **Data:**     |     |
+| **Scenario:** | Run not found |
+| ------------- | ------------- |
+| **Code:**     | 404           |
+| **Data:**     | —             |
 
-| **Scenario:** |     |
-| ------------- | --- |
-| **Code:**     |     |
-| **Data:**     |     |
-## path of endpoint
+| **Scenario:** | One or more artifact names not found |
+| ------------- | ------------------------------------ |
+| **Code:**     | 404                                  |
+| **Data:**     | —                                    |
 
-| **Purpose:**          |                    |
-| --------------------- | ------------------ |
-| **Authentication:**   | `PUBLIC/PROTECTED` |
-| **Request payload:**  |                    |
-| **Response payload:** |                    |
+- - -
+## GET /runs/{name}/export
+
+| **Purpose:**          | Downloading one or more artifacts from a run; single file or .zip |
+| --------------------- | ----------------------------------------------------------------- |
+| **Authentication:**   | `PUBLIC`                                                          |
+| **Request payload:**  | `?artifacts=book,calibration`                                     |
+| **Response payload:** | File or .zip download                                             |
+
 ### Success response
 
-| **Code:**             |     |
-| --------------------- | --- |
-| **Data:**             |     |
+| **Code:** | 200                                               |
+| --------- | ------------------------------------------------- |
+| **Data:** | File download (`Content-Disposition: attachment`) |
+
 ### Error response
 
-| **Scenario:** |     |
-| ------------- | --- |
-| **Code:**     |     |
-| **Data:**     |     |
+| **Scenario:** | Run not found |
+| ------------- | ------------- |
+| **Code:**     | 404           |
+| **Data:**     | —             |
 
-| **Scenario:** |     |
-| ------------- | --- |
-| **Code:**     |     |
-| **Data:**     |     |
+| **Scenario:** | One or more artifact names not found |
+| ------------- | ------------------------------------ |
+| **Code:**     | 404                                  |
+| **Data:**     | —                                    |
+
+- - -
+# clippings
+## GET /clippings
+
+| **Purpose:**          | Fetching metadata of the current clippings file |
+| --------------------- | ----------------------------------------------- |
+| **Authentication:**   | `PUBLIC`                                        |
+| **Request payload:**  | —                                               |
+| **Response payload:** | Clippings file metadata                         |
+
+### Success response
+
+| **Code:** | 200                          |
+| --------- | ---------------------------- |
+| **Data:** | `{ name, uploadedAt, path }` |
+
+### Error response
+
+| **Scenario:** | No clippings file uploaded yet |
+| ------------- | ------------------------------ |
+| **Code:**     | 404                            |
+| **Data:**     | —                              |
+
+
+- - -
+# files
+## POST /files/book
+
+| **Purpose:**          | Uploading a book file to the library for use in runs |
+| --------------------- | ---------------------------------------------------- |
+| **Authentication:**   | `PUBLIC`                                             |
+| **Request payload:**  | `multipart/form-data` — book file                    |
+| **Response payload:** | Uploaded file reference                              |
+
+### Success response
+
+| **Code:** | 201                      |
+| --------- | ------------------------ |
+| **Data:** | `{ name, lastModified }` |
+
+### Error response
+
+| **Scenario:** | Invalid file type |
+| ------------- | ----------------- |
+| **Code:**     | 400               |
+| **Data:**     | —                 |
+
+- - -
+## POST /files/calibration
+
+| **Purpose:**          | Uploading a calibration file to the library for use in runs |
+| --------------------- | ----------------------------------------------------------- |
+| **Authentication:**   | `PUBLIC`                                                    |
+| **Request payload:**  | `multipart/form-data` — calibration file                    |
+| **Response payload:** | Uploaded file reference                                     |
+
+### Success response
+
+| **Code:** | 201                      |
+| --------- | ------------------------ |
+| **Data:** | `{ name, lastModified }` |
+
+### Error response
+
+| **Scenario:** | Invalid file type |
+| ------------- | ----------------- |
+| **Code:**     | 400               |
+| **Data:**     | —                 |
+
+- - -
+## POST /files/template
+
+| **Purpose:**          | Uploading an output template file to the library for use in runs |
+| --------------------- | ---------------------------------------------------------------- |
+| **Authentication:**   | `PUBLIC`                                                         |
+| **Request payload:**  | `multipart/form-data` — template file                            |
+| **Response payload:** | Uploaded file reference                                          |
+
+### Success response
+
+| **Code:** | 201                      |
+| --------- | ------------------------ |
+| **Data:** | `{ name, lastModified }` |
+
+### Error response
+
+| **Scenario:** | Invalid file type |
+| ------------- | ----------------- |
+| **Code:**     | 400               |
+| **Data:**     | —                 |
+
+- - -
+## POST /files/headingsTemplate
+
+| **Purpose:**          | Uploading a headings template file to the library for use in runs |
+| --------------------- | ----------------------------------------------------------------- |
+| **Authentication:**   | `PUBLIC`                                                          |
+| **Request payload:**  | `multipart/form-data` — headings template file                    |
+| **Response payload:** | Uploaded file reference                                           |
+
+### Success response
+
+| **Code:** | 201                      |
+| --------- | ------------------------ |
+| **Data:** | `{ name, lastModified }` |
+
+### Error response
+
+| **Scenario:** | Invalid file type |
+| ------------- | ----------------- |
+| **Code:**     | 400               |
+| **Data:**     | —                 |
+
+- - -
+## GET /files
+
+| **Purpose:**          | Fetching a paginated, searchable list of uploaded files of a given type |
+| --------------------- | ----------------------------------------------------------------------- |
+| **Authentication:**   | `PUBLIC`                                                                |
+| **Request payload:**  | `?type=book\|calibration&search=&page=`                                 |
+| **Response payload:** | Paginated list of files                                                 |
+
+### Success response
+
+| **Code:** | 200                                                            |
+| --------- | -------------------------------------------------------------- |
+| **Data:** | `{ files: [{ name, lastModified }], totalPages, currentPage }` |
+
+### Error response
+
+| **Scenario:** | Invalid or missing type |
+| ------------- | ----------------------- |
+| **Code:**     | 400                     |
+| **Data:**     | —                       |
+
+- - -
+# execute
+## POST /execute/full
+
+| **Purpose:**          | Starting a full parsing run                                                                                    |
+| --------------------- | -------------------------------------------------------------------------------------------------------------- |
+| **Authentication:**   | `PUBLIC`                                                                                                       |
+| **Request payload:**  | `{ bookRef, calibrationRef, clippingsRef, templateRef, title?, debugMode, overwriteFyodorTemplate }`          |
+| **Response payload:** | Run ID for log streaming                                                                                       |
+
+### Success response
+
+| **Code:** | 202         |
+| --------- | ----------- |
+| **Data:** | `{ runId }` |
+
+### Error response
+
+| **Scenario:** | Missing required fields  |
+| ------------- | ------------------------ |
+| **Code:**     | 400                      |
+| **Data:**     | —                        |
+
+| **Scenario:** | File reference not found |
+| ------------- | ------------------------ |
+| **Code:**     | 404                      |
+| **Data:**     | —                        |
+
+- - -
+## POST /execute/generate
+
+| **Purpose:**          | Starting a calibration file generation run |
+| --------------------- | ------------------------------------------ |
+| **Authentication:**   | `PUBLIC`                                   |
+| **Request payload:**  | `{ bookRef, debugMode }`                   |
+| **Response payload:** | Run ID for log streaming                   |
+
+### Success response
+
+| **Code:** | 202         |
+| --------- | ----------- |
+| **Data:** | `{ runId }` |
+
+### Error response
+
+| **Scenario:** | Missing required fields  |
+| ------------- | ------------------------ |
+| **Code:**     | 400                      |
+| **Data:**     | —                        |
+
+| **Scenario:** | File reference not found |
+| ------------- | ------------------------ |
+| **Code:**     | 404                      |
+| **Data:**     | —                        |
+
+- - -
+## POST /execute/headings
+
+| **Purpose:**          | Starting a headings-only parsing run                                  |
+| --------------------- | --------------------------------------------------------------------- |
+| **Authentication:**   | `PUBLIC`                                                              |
+| **Request payload:**  | `{ bookRef, calibrationRef, headingsTemplateRef, debugMode }`         |
+| **Response payload:** | Run ID for log streaming                                              |
+
+### Success response
+
+| **Code:** | 202         |
+| --------- | ----------- |
+| **Data:** | `{ runId }` |
+
+### Error response
+
+| **Scenario:** | Missing required fields  |
+| ------------- | ------------------------ |
+| **Code:**     | 400                      |
+| **Data:**     | —                        |
+
+| **Scenario:** | File reference not found |
+| ------------- | ------------------------ |
+| **Code:**     | 404                      |
+| **Data:**     | —                        |
+
+- - -
+## GET /execute/{runId}/logs
+
+| **Purpose:**          | SSE stream of log output for an active run         |
+| --------------------- | -------------------------------------------------- |
+| **Authentication:**   | `PUBLIC`                                           |
+| **Request payload:**  | —                                                  |
+| **Response payload:** | `text/event-stream` — log lines until run completes |
+
+### Success response
+
+| **Code:** | 200                                         |
+| --------- | ------------------------------------------- |
+| **Data:** | SSE stream of log lines until run completes |
+
+### Error response
+
+| **Scenario:** | Run ID not found |
+| ------------- | ---------------- |
+| **Code:**     | 404              |
+| **Data:**     | —                |
