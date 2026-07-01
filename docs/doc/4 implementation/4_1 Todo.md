@@ -8,4 +8,3 @@
 - - -
 # 2. Notes and planned changes
 - improve --help flag to explain use cases
-- Spring Boot based web GUI that interacts with JAR or uses JAR classes?
