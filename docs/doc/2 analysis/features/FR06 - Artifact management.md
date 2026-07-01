@@ -28,13 +28,12 @@ The user should be able to upload artifacts needed to run the tool, and should b
 	**When** the file is not a supported file type
 	**Then** the system should reject the upload
 	**And** an error message should be shown
-#### **ID**: FRXX_XX-EC_XX
-**Scenario**: Name of edge case
-	**Given**
-	**When**
-	**And**
-	**Then**
-	**But**
+	- Supported types: book = `.epub` / `.azw3` / `.mobi`, calibration = `.txt`, clippings = `.txt`, template = `.ftl`
+#### **ID**: FR06_01-EC_02
+**Scenario**: File with same name already exists
+	**Given** the user chose a file to upload
+	**When** a file with the same name already exists in the storage location
+	**Then** the existing file is silently overwritten
 ### 2.3. Entities involved
 - [[2_1 Data Dictionary#Uploaded artifacts]]
 - ... 
@@ -66,6 +65,11 @@ Link to wireframe
 **Scenario**: Lack of permission to save artifact
 	**Given** the user successfully uploaded an artifact
 	**When** the system saves the artifacts and gets an error
+	**Then** an error message should be shown to the user
+#### **ID**: FR06_02-EC_02
+**Scenario**: Configured storage path does not exist
+	**Given** the user successfully uploaded an artifact
+	**When** the configured storage path for that artifact type does not exist on the filesystem
 	**Then** an error message should be shown to the user
 ### 2.3. Entities involved
 - [[2_1 Data Dictionary#Stored artifacts]]]
