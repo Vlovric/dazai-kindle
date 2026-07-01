@@ -1,7 +1,8 @@
 # 1. Overview & Context
 The user should be able to create templates which are then saved to the filesystem and visible from the Library ([[FR07 - Library management]]).
 The user should see a rendered example of the template using hardcoded example entries.
-The user should see an error if the template cannot be rendered
+The user should see an error if the template cannot be rendered.
+The template is READONLY meaning the user cannot alter it, it is only to see the rendered output.
 - - -
 # 2. Features
 - - -
