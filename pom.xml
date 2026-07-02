@@ -36,6 +36,15 @@
 
     <dependencyManagement>
         <dependencies>
+            <!-- Java Spring Boot -->
+            <dependency>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-dependencies</artifactId>
+                <version>4.0.7</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+
             <!-- CLI Parsing -->
             <dependency>
                 <groupId>args4j</groupId>
