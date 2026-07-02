@@ -40,7 +40,7 @@ The user should be able to upload template files through the UI. Uploaded templa
 ### 2.4. Activity diagram
 Link to diagram
 ### 2.5. Wireframe
-Link to wireframe
+[[template_library.png]]
 - - -
 ## FR09_02 - Creation of headings templates
 
@@ -74,4 +74,4 @@ Link to wireframe
 ### 2.4. Activity diagram
 Link to diagram
 ### 2.5. Wireframe
-Link to wireframe
+[[template_library.png]]

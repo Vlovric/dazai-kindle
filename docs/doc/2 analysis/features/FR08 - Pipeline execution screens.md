@@ -1,5 +1,6 @@
 # 1. Overview & Context
-The user should be able to execute all possible pipelines through the UI. The user should be able to upload files in these screens, check flags and see outputted logs and the outputted artifacts. When a run is finished, the user can see the resulting artifacts in the Library ([[FR07 - Library management]])
+The user should be able to execute all possible pipelines through the UI. The user should be able to upload files in these screens, check flags and see outputted logs and the outputted artifacts. When a run is finished, the user can see the resulting artifacts in the Library ([[FR07 - Library management]]).
+The user can choose the run type through the dashboard UI
 - - -
 # 2. Features
 ## Mandatory prerequisites for all cases
@@ -42,7 +43,8 @@ The user should be able to execute all possible pipelines through the UI. The us
 ### 2.4. Activity diagram
 Link to diagram
 ### 2.5. Wireframe
-Link to wireframe
+[[calibration_run.png]]
+[[dashboard.png]]
 - - -
 ## FR08_02 - Execute headings-only run
 
@@ -81,7 +83,8 @@ Link to wireframe
 ### 2.4. Activity diagram
 Link to diagram
 ### 2.5. Wireframe
-Link to wireframe
+[[headings_run.png]]
+[[dashboard.png]]
 - - -
 ## FR08_03 - Execute full run
 
@@ -135,4 +138,5 @@ Link to wireframe
 ### 2.4. Activity diagram
 Link to diagram
 ### 2.5. Wireframe
-Link to wireframe
+[[full_run.png]]
+[[dashboard.png]]

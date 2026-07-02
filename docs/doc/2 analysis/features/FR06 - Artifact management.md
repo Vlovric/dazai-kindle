@@ -40,7 +40,7 @@ The user should be able to upload artifacts needed to run the tool, and should b
 ### 2.4. Activity diagram
 Link to diagram
 ### 2.5. Wireframe
-Link to wireframe
+[[artifact_upload.png]]
 - - -
 ## FR06_02 - Storing artifacts
 
@@ -77,4 +77,4 @@ Link to wireframe
 ### 2.4. Activity diagram
 Link to diagram
 ### 2.5. Wireframe
-Link to wireframe
+[[artifact_storage.png]]

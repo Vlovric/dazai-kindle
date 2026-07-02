@@ -23,17 +23,17 @@
 | Library       | Clicks "Delete" (hover element on select) | Files selected  | Confirmation popup → Library (refreshed) |
 # Configure New Full Run
 
-| Source screen                                | User Action (Element)                                          | Event/Condition            | Target screen                                     |
-| -------------------------------------------- | -------------------------------------------------------------- | -------------------------- | ------------------------------------------------- |
-| Configure New Full Run                       | Clicks "Upload New File" (Select Book)                         | —                          | OS file picker                                    |
-| Configure New Full Run                       | Clicks "Choose from Library" (Select Book)                     | —                          | Select Book from Library (modal)                  |
-| Configure New Full Run                       | Clicks "Upload New File" (Select Calibration File)             | —                          | OS file picker                                    |
-| Configure New Full Run                       | Clicks "Choose from Library" (Select Calibration File)         | —                          | Select Calibration File from Library (modal)      |
-| Configure New Full Run                       | Clicks "Upload New File" (Select Clippings File)               | —                          | OS file picker                                    |
-| Configure New Full Run                       | Clicks "Choose Current" (Select Clippings File)                | —                          | Pre-fills with stored clippings file              |
-| Configure New Full Run                       | Clicks "Upload New File" (Select Output Template)              | —                          | OS file picker                                    |
-| Configure New Full Run                       | Clicks "Choose from Library" (Select Output Template)          | —                          | Select Calibration File from Library (modal)      |
-| Configure New Full Run                       | Clicks "Extract"                                               | All required fields filled | Library (book detail of new run)                  |
+| Source screen          | User Action (Element)                                  | Event/Condition            | Target screen                                |
+| ---------------------- | ------------------------------------------------------ | -------------------------- | -------------------------------------------- |
+| Configure New Full Run | Clicks "Upload New File" (Select Book)                 | —                          | OS file picker                               |
+| Configure New Full Run | Clicks "Choose from Library" (Select Book)             | —                          | Select Book from Library (modal)             |
+| Configure New Full Run | Clicks "Upload New File" (Select Calibration File)     | —                          | OS file picker                               |
+| Configure New Full Run | Clicks "Choose from Library" (Select Calibration File) | —                          | Select Calibration File from Library (modal) |
+| Configure New Full Run | Clicks "Upload New File" (Select Clippings File)       | —                          | OS file picker                               |
+| Configure New Full Run | Clicks "Choose Current" (Select Clippings File)        | —                          | Pre-fills with stored clippings file         |
+| Configure New Full Run | Clicks "Upload New File" (Select Output Template)      | —                          | OS file picker                               |
+| Configure New Full Run | Clicks "Choose from Library" (Select Output Template)  | —                          | Select File from Library (modal)             |
+| Configure New Full Run | Clicks "Extract"                                       | All required fields filled | Library (book detail of new run)             |
 # Select Book or Calibration file Modal
 
 | Source screen                                | User Action (Element)                                          | Event/Condition        | Target screen                                     |
@@ -51,15 +51,15 @@
 | Generate Calibration File       | Clicks "Generate"                                              | Required fields filled | Library (book detail of new run)                  |
 # Configure New Headings Only Run
 
-| Source screen                   | User Action (Element)                                          | Event/Condition        | Target screen                                     |
-| ------------------------------- | -------------------------------------------------------------- | ---------------------- | ------------------------------------------------- |
-| Configure New Headings Only Run | Clicks "Upload New File" (Select Book)                         | —                      | OS file picker                                    |
-| Configure New Headings Only Run | Clicks "Choose from Library" (Select Book)                     | —                      | Select Book from Library (modal)                  |
-| Configure New Headings Only Run | Clicks "Upload New File" (Select Calibration File)             | —                      | OS file picker                                    |
-| Configure New Headings Only Run | Clicks "Choose from Library" (Select Calibration File)         | —                      | Select Calibration File from Library (modal)      |
-| Configure New Headings Only Run | Clicks "Upload New File" (Select Headings Output Template)     | —                      | OS file picker                                    |
-| Configure New Headings Only Run | Clicks "Choose from Library" (Select Headings Output Template) | —                      | Select Calibration File from Library (modal)      |
-| Configure New Headings Only Run | Clicks "Extract"                                               | Required fields filled | Library (book detail of new run)                  |
+| Source screen                   | User Action (Element)                                          | Event/Condition        | Target screen                                |
+| ------------------------------- | -------------------------------------------------------------- | ---------------------- | -------------------------------------------- |
+| Configure New Headings Only Run | Clicks "Upload New File" (Select Book)                         | —                      | OS file picker                               |
+| Configure New Headings Only Run | Clicks "Choose from Library" (Select Book)                     | —                      | Select Book from Library (modal)             |
+| Configure New Headings Only Run | Clicks "Upload New File" (Select Calibration File)             | —                      | OS file picker                               |
+| Configure New Headings Only Run | Clicks "Choose from Library" (Select Calibration File)         | —                      | Select Calibration File from Library (modal) |
+| Configure New Headings Only Run | Clicks "Upload New File" (Select Headings Output Template)     | —                      | OS file picker                               |
+| Configure New Headings Only Run | Clicks "Choose from Library" (Select Headings Output Template) | —                      | Select File from Library (modal)             |
+| Configure New Headings Only Run | Clicks "Extract"                                               | Required fields filled | Library (book detail of new run)             |
 # Book detail
 
 | Source screen | User Action (Element)                     | Event/Condition | Target screen                                |

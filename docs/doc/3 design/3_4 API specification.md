@@ -390,6 +390,28 @@
 | **Data:**     | —                 |
 
 - - -
+## POST /files/clippings
+
+| **Purpose:**          | Uploading a clippings file to the library for use in runs |
+| --------------------- | --------------------------------------------------------- |
+| **Authentication:**   | `PUBLIC`                                                  |
+| **Request payload:**  | `multipart/form-data` — clippings file                    |
+| **Response payload:** | Uploaded file reference                                   |
+
+### Success response
+
+| **Code:** | 201                      |
+| --------- | ------------------------ |
+| **Data:** | `{ name, lastModified }` |
+
+### Error response
+
+| **Scenario:** | Invalid file type |
+| ------------- | ----------------- |
+| **Code:**     | 400               |
+| **Data:**     | —                 |
+
+- - -
 ## POST /files/calibration
 
 | **Purpose:**          | Uploading a calibration file to the library for use in runs |
@@ -461,7 +483,7 @@
 | **Purpose:**          | Fetching a paginated, searchable list of uploaded files of a given type |
 | --------------------- | ----------------------------------------------------------------------- |
 | **Authentication:**   | `PUBLIC`                                                                |
-| **Request payload:**  | `?type=book\|calibration&search=&page=`                                 |
+| **Request payload:**  | `?type=book\|calibration\|template\|headingTemplate&search=&page=`      |
 | **Response payload:** | Paginated list of files                                                 |
 
 ### Success response

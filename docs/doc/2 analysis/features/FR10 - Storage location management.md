@@ -28,7 +28,7 @@ The user should be able to change the location where artifacts are stored by poi
 ### 2.4. Activity diagram
 Link to diagram
 ### 2.5. Wireframe
-Link to wireframe
+[[paths.png]]
 - - -
 ## FR10_02 - Change a storage path
 
@@ -69,4 +69,4 @@ Link to wireframe
 ### 2.4. Activity diagram
 Link to diagram
 ### 2.5. Wireframe
-Link to wireframe
+[[paths.png]]

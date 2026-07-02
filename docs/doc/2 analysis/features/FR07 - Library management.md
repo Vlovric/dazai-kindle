@@ -5,12 +5,12 @@ The user should be able to view and delete all stored artifacts of uploads and o
 - - -
 ## FR07_01 - Template library
 
-| ID            | FR07_01                                                                                                                                                                                                                                                                                                                                                                                                                                              |
-| ------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Requirement   | Viewing and manipulating templates                                                                                                                                                                                                                                                                                                                                                                                                                   |
-| Explanation   | The user should be able to view, save and delete previously stored templates. Templates are filtered into 2 categories:<br>- output templates<br>- heading templates<br>The user can filter by type, search by file name and sort by modification date<br>The user can also delete templates which deletes them from the filesystem<br>The user can also choose to save a copy of a template to the filesystem in a location where the user chooses. |
-| Priority      |                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
-| FR dependency |                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
+| ID            | FR07_01                                                                                                                                                                                                                                                                                                                                                                                                                         |
+| ------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Requirement   | Viewing and manipulating templates                                                                                                                                                                                                                                                                                                                                                                                              |
+| Explanation   | The user should be able to view, save and delete previously stored templates. Templates are filtered into 2 categories:<br>- output templates<br>- heading templates<br>The user can filter by type and sort by modification date<br>The user can also delete templates which deletes them from the filesystem<br>The user can also choose to save a copy of a template to the filesystem in a location where the user chooses. |
+| Priority      |                                                                                                                                                                                                                                                                                                                                                                                                                                 |
+| FR dependency |                                                                                                                                                                                                                                                                                                                                                                                                                                 |
 ### 2.1. Happy path
 #### FR07_01-HP_01
 
@@ -78,7 +78,7 @@ The user should be able to view and delete all stored artifacts of uploads and o
 ### 2.4. Activity diagram
 Link to diagram
 ### 2.5. Wireframe
-Link to wireframe
+[[template_library.png]]
 - - -
 ## FR07_02 - Book library
 
@@ -178,7 +178,7 @@ Link to wireframe
 ### 2.4. Activity diagram
 Link to diagram
 ### 2.5. Wireframe
-Link to wireframe
+[[book_library.png]]
 - - -
 ## FR07_03 - Clippings library
 
@@ -211,4 +211,4 @@ Link to wireframe
 ### 2.4. Activity diagram
 Link to diagram
 ### 2.5. Wireframe
-Link to wireframe
+[[clippings_library.png]]

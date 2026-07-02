@@ -1,0 +1,3 @@
+- [ ] [[FR07 - Library management#FR07_01 - Template library]]
+- [ ] [[FR09 - Template creation#FR09_01 - Creation of output templates]]
+- [ ] [[FR09 - Template creation#FR09_02 - Creation of headings templates]]
