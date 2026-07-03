@@ -1,0 +1,1 @@
+- [ ] [[FR07 - Library management#FR07_03 - Clippings library]]

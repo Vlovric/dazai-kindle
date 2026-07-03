@@ -1,0 +1,1 @@
+Create the sidebar and single page application screen for all future screens

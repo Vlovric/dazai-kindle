@@ -1,0 +1,2 @@
+- [ ] [[FR10 - Storage location management#FR10_01 - View configured paths]]
+- [ ] [[FR10 - Storage location management#FR10_02 - Change a storage path]]

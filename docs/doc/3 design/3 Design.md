@@ -1,5 +1,4 @@
-# [[3_1 schema.sql|1. Data schema]]
-- `physical DB schema file`
+# [[3_1 Folder storage structure|1. Data schema]]
 # [[3_2 Arhitecture and folder structure|2. Architecture & Folder Structure]]
 - `Architecture that will be used`
 - `Folder structure rules`
