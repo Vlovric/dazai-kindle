@@ -2,7 +2,6 @@
 # Working on
 
 # 1.1. High prio
-- [ ] [[18 - Java Spring Boot and React project]]
 - [ ] [[19 - Sidebar and SPA]]
 - [ ] [[20 - Dashboard]]
 - [ ] [[21 - Paths screen]]
