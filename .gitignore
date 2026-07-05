@@ -28,3 +28,4 @@ replay_pid*
 
 /debug-runs
 .claude
+web/package-lock.json

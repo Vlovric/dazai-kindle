@@ -3,7 +3,7 @@
 
 # 1.1. High prio
 - [ ] [[19 - Sidebar and SPA]]
-- [ ] [[20 - Dashboard]]
+- [ ] [[X20 - Dashboard]]
 - [ ] [[21 - Paths screen]]
 # 1.2. Medium prio
 - [ ] [[22 - Clippings library]]
