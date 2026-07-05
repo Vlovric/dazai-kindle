@@ -19,7 +19,7 @@ public class StatsController {
 
     @Operation(summary = "Fetch all statistics for the dashboard")
     @ApiResponse(responseCode = "200", description = "Statistics retrieved")
-    @GetMapping("/stats")
+    @GetMapping("/api/stats")
     public StatsResponse getStats(){
         return statsService.getStats();
     }

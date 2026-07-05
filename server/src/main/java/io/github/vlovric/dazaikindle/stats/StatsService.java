@@ -6,6 +6,8 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Instant;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -16,6 +18,8 @@ import io.github.vlovric.dazaikindle.stats.dto.StatsResponse;
 
 @Service
 public class StatsService {
+
+    private static final Logger log = LoggerFactory.getLogger(StatsService.class);
 
     private final StorageConfig storageConfig;
     private final ObjectMapper objectMapper = new ObjectMapper();
@@ -37,7 +41,6 @@ public class StatsService {
             return runDirs
                 .filter(Files::isDirectory)
                 .map(dir -> dir.resolve(storageConfig.getRunJsonFileName()))
-                .filter(Files::exists)
                 .mapToLong(this::readHighlightCount)
                 .sum();
         } catch (IOException e) {
@@ -49,7 +52,8 @@ public class StatsService {
         try {
             return objectMapper.readValue(runMetadataFile.toFile(), RunMetadata.class).highlightCount();
         } catch (IOException e) {
-            throw new UncheckedIOException("Failed to read run metadata at " + runMetadataFile, e);
+            log.warn("Skipping unreadable run metadata file: {}", runMetadataFile.getFileName(), e);
+            return 0;
         }
     }
 
