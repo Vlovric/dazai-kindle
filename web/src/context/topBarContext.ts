@@ -1,8 +1,6 @@
 import { createContext, type ReactNode } from "react"
 
 export interface TopBarContextValue {
-    searchQuery: string
-    setSearchQuery: (query: string) => void
     actions: ReactNode
     setActions: (actions: ReactNode) => void
 }
