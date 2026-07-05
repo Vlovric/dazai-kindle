@@ -4,9 +4,16 @@ export function RunCard({ title, explanation, onClick }: {
     onClick: () => void
 }) {
     return (
-        <button className="run-card" onClick={onClick}>
-            <h3>{title}</h3>
-            <p>{explanation}</p>
+        <button
+            onClick={onClick}
+            className="group flex flex-col text-left bg-surface-container-lowest border border-outline-variant rounded-lg p-lg transition-colors hover:border-primary"
+        >
+            <h3 className="font-headline text-headline-md text-primary mb-sm">{title}</h3>
+            <p className="font-body text-body-md text-secondary flex-1">{explanation}</p>
+            <div className="flex items-center gap-xs text-primary text-label-md font-body mt-md">
+                <span>Initiate</span>
+                <span aria-hidden="true" className="transition-transform group-hover:translate-x-1">&rarr;</span>
+            </div>
         </button>
     )
 }

@@ -6,21 +6,23 @@ function formatLastRun(iso: string | null): string {
     return `${hours} Hours Ago`
 }
 
+function Stat({ label, value }: { label: string; value: string }) {
+    return (
+        <div>
+            <p className="text-label-sm font-body text-secondary uppercase tracking-wide">{label}</p>
+            <p className="text-headline-md font-headline text-primary">{value}</p>
+        </div>
+    )
+}
+
 export function StatsBar({ stats }: { stats: StatsResponse }) {
     return (
-        <div className="stats-bar">
-            <div>
-                <span>Total</span>
-                <strong>{stats.highlightCount} Highlights</strong>
-            </div>
-            <div>
-                <span>Library</span>
-                <strong>{stats.entryCount} entries</strong>
-            </div>
-            <div>
-                <span>Last run</span>
-                <strong>{formatLastRun(stats.lastRunTime)}</strong>
-            </div>
+        <div className="flex flex-wrap items-center justify-between gap-xl bg-surface-container-low border border-outline-variant rounded-lg px-xl py-lg">
+            <Stat label="Total" value={`${stats.highlightCount} Highlights`} />
+            <div className="hidden md:block w-px h-12 bg-outline-variant" />
+            <Stat label="Library" value={`${stats.entryCount} entries`} />
+            <div className="hidden md:block w-px h-12 bg-outline-variant" />
+            <Stat label="Last run" value={formatLastRun(stats.lastRunTime)} />
         </div>
     )
 }
