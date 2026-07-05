@@ -60,10 +60,13 @@ public class Pipeline {
                 }
             }
             
+            long highlightCount = context.clippings == null ? 0
+                    : context.clippings.stream().filter(Clipping::isHighlight).count();
+
             return new PipelineResult(
                 context.matchedBookTitle,
                 context.epubAuthor,
-                context.clippings.stream().filter(Clipping::isHighlight).count()
+                highlightCount
             );
         }
     }
