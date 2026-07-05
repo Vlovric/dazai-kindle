@@ -35,7 +35,7 @@ Link to diagram
 | ID            | FR10_02                                                                                                                                                                                                                                    |
 | ------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | Requirement   | Changing the filesystem path for a storage location                                                                                                                                                                                        |
-| Explanation   | The user can change the Library or Templates storage path by selecting a folder via an OS folder picker. The new path is saved to the config file and takes effect immediately. Existing content at the old path is not moved automatically. |
+| Explanation   | The user can change the Library or Templates storage path by directly editing the path in a text field and confirming the change. The new path is saved to the config file and takes effect immediately. Existing content at the old path is not moved automatically. |
 | Priority      |                                                                                                                                                                                                                                            |
 | FR dependency | FR10_01                                                                                                                                                                                                                                    |
 ### 2.1. Happy path
@@ -45,21 +45,21 @@ Link to diagram
 | ----------------- | ---------------------------------------------------------------------------------------------------------- |
 | **Scenario**      | Successful path change                                                                                     |
 | **Precondition**  |                                                                                                            |
-| **Trigger**       | User clicks Browse next to a path field                                                                    |
-| **System action** | 1. OS folder picker opens<br>2. User selects a folder<br>3. System saves the new path to the config file  |
+| **Trigger**       | User edits the path text field and clicks the Change button                                                |
+| **System action** | 1. System validates that the entered path exists and is a directory<br>2. System saves the new path to the config file |
 | **UI reaction**   | The updated path is shown in the UI                                                                        |
 
 ### 2.2. Edge cases
 #### **ID**: FR10_02-EC_01
-**Scenario**: Selected path does not exist or is inaccessible
-	**Given** the user selected a folder via the OS picker
-	**When** the system validates the selected path
-	**And** the path does not exist or cannot be accessed
+**Scenario**: Entered path does not exist or is not a directory
+	**Given** the user entered a path in the text field
+	**When** the system validates the entered path
+	**And** the path does not exist or is not a directory
 	**Then** an error message is shown to the user
 	**And** the path remains unchanged
 #### **ID**: FR10_02-EC_02
 **Scenario**: Config file cannot be written
-	**Given** the user selected a valid folder
+	**Given** the user entered a valid, existing folder path
 	**When** the system tries to save the new path to the config file
 	**And** the write fails due to lack of permission or other error
 	**Then** an error message is shown to the user

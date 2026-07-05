@@ -33,6 +33,8 @@ colors:
   on-error: '#ffffff'
   error-container: '#ffdad6'
   on-error-container: '#93000a'
+  success: '#2e6f4f'
+  on-success: '#ffffff'
   primary-fixed: '#c7e7fc'
   primary-fixed-dim: '#abcbdf'
   on-primary-fixed: '#001e2c'

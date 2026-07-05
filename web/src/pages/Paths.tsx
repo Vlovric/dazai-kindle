@@ -1,6 +1,8 @@
+import { useState } from "react"
 import { usePaths } from "../hooks/usePaths"
 import { PathRow } from "../components/PathRow"
 import { updatePath } from "../api/paths"
+import { Toast } from "../components/Toast"
 
 const LABELS: Record<string, string> = {
     library: "Library",
@@ -9,10 +11,12 @@ const LABELS: Record<string, string> = {
 
 export function Paths() {
     const { data: paths, loading, error, setData } = usePaths()
+    const [toastMessage, setToastMessage] = useState<string | null>(null)
 
     async function handleChange(name: string, newPath: string) {
         const updated = await updatePath(name, newPath)
         setData((prev) => prev?.map((p) => (p.name === name ? updated : p)) ?? null)
+        setToastMessage("Successfully updated path")
     }
 
     return (
@@ -28,6 +32,9 @@ export function Paths() {
                     onChange={(newPath) => handleChange(p.name, newPath)}
                 />
             ))}
+            {toastMessage && (
+                <Toast message={toastMessage} onDismiss={() => setToastMessage(null)} />
+            )}
         </main>
     )
 }

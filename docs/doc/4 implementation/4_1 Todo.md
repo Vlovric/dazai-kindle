@@ -2,16 +2,14 @@
 # Working on
 
 # 1.1. High prio
-- [ ] [[X19 - Sidebar and SPA]]
-- [ ] [[X20 - Dashboard]]
-- [ ] [[21 - Paths screen]]
-# 1.2. Medium prio
-- [ ] [[22 - Clippings library]]
-- [ ] [[23 - Book library]]
-- [ ] [[24 - Template library]]
 - [ ] [[25 - Full run]]
 - [ ] [[26 - Calibration run]]
 - [ ] [[27 - Headings run]]
+# 1.2. Medium prio
+- [ ] [[23 - Book library]]
+- [ ] [[24 - Template library]]
+- [ ] [[22 - Clippings library]]
+
 # 1.3. Low prio
 - - -
 # 2. Notes and planned changes
