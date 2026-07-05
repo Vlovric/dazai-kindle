@@ -8,6 +8,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.List;
 
 import io.github.vlovric.dazaikindle.DebugArtifacts;
+import io.github.vlovric.dazaikindle.models.Clipping;
 import io.github.vlovric.dazaikindle.AppArgs;
 import io.github.vlovric.dazaikindle.pipeline.steps.FitCalibrationStep;
 import io.github.vlovric.dazaikindle.pipeline.steps.GroupClippingsStep;
@@ -36,7 +37,7 @@ public class Pipeline {
      * Runs the pipeline, executing each step in sequence. If any step returns StepResult.FINISH, the pipeline terminates immediately.
      * @throws Exception
      */
-    public void run() throws Exception{
+    public PipelineResult run() throws Exception{
 
         List<PipelineStep> steps = List.of(
             new PreprocessBookStep(args),           // .azw3/.mobi → .epub via Calibre if needed
@@ -55,9 +56,15 @@ public class Pipeline {
             for (PipelineStep step : steps) {
                 StepResult result = step.execute(context);
                 if (result == StepResult.FINISH) {
-                    return;
+                    break;
                 }
             }
+            
+            return new PipelineResult(
+                context.matchedBookTitle,
+                context.epubAuthor,
+                context.clippings.stream().filter(Clipping::isHighlight).count()
+            );
         }
     }
 

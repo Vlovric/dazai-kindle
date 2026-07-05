@@ -1,4 +1,5 @@
 Create the dashboard screen and the stats section
 
-moram vjerojatno promijenit CLI
-CLI da ima isti folder structure? Bi li to bilo pre opinionated?
+API anotacija
+
+Sigurnost, skuzit odma jel resolve moze bit exploited, jel trebam sanitaciju, itd... 

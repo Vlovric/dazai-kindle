@@ -21,7 +21,8 @@ public class StorageConfig {
 
     public static final String LIBRARY = "library";
     public static final String TEMPLATES = "templates";
-
+    private static final String RUN_METADATA_FILE = "run.json";
+    
     private static final Path ROOT = Path.of(System.getProperty("user.home"), "DazaiKindle");
     private static final Path CONFIG_FILE = ROOT.resolve("pathsConfig.json");
     private static final Path CLIPPINGS_FILE = ROOT.resolve("clippings.txt");
@@ -59,6 +60,10 @@ public class StorageConfig {
 
     public Path getClippingsFile() {
         return CLIPPINGS_FILE;
+    }
+
+    public String getRunJsonFileName(){
+        return RUN_METADATA_FILE;
     }
 
     /**
