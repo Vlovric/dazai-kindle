@@ -6,7 +6,7 @@
 - `descriptions should be high level, the code is the documentation`
 # API constraints
 - Authorization rules: **all endpoints public**
-- Error format:
+- Error format: `{ message: string }` - every error response below carries this body, even where a scenario's **Data** column says `—`
 - - -
 # stats
 ## GET /stats
