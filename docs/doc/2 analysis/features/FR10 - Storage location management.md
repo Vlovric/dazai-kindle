@@ -1,5 +1,5 @@
 # 1. Overview & Context
-The user should be able to change the location where artifacts are stored by pointing to a directory. Existing content in old locations doesn't get moved, the user should manually move existing content if the user changes the storage path for an artifact. This should probably be a config file that gets updated through the UI so paths are remembered
+The user should be able to change the location where artifacts are stored by pointing to a directory. Existing content in old locations doesn't get moved, the user should manually move existing content if the user changes the storage path for an artifact. There is a config file that gets updated through the UI so paths are persistent
 - - -
 # 2. Features
 - - -

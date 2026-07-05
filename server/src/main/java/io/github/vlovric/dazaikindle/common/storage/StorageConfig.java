@@ -73,16 +73,21 @@ public class StorageConfig {
      * "unknown name" are distinct error scenarios in the API.
      */
     public void updatePath(String name, Path newPath) {
-        switch (name) {
-            case LIBRARY -> libraryPath = newPath;
-            case TEMPLATES -> templatesPath = newPath;
-            default -> throw new IllegalArgumentException("Unknown path name: " + name);
+        Path newLibraryPath = LIBRARY.equals(name) ? newPath : libraryPath;
+        Path newTemplatesPath = TEMPLATES.equals(name) ? newPath : templatesPath;
+        if (!LIBRARY.equals(name) && !TEMPLATES.equals(name)) {
+            throw new IllegalArgumentException("Unknown path name: " + name);
         }
         try {
-            persist();
+            persist(newLibraryPath, newTemplatesPath);
         } catch (IOException e) {
             throw new UncheckedIOException("Failed to persist storage configuration", e);
         }
+        // Only committed to memory once the write succeeds - otherwise a
+        // failed persist would leave the in-memory path out of sync with
+        // what's actually on disk.
+        libraryPath = newLibraryPath;
+        templatesPath = newTemplatesPath;
     }
 
     private void load() throws IOException {
@@ -92,6 +97,10 @@ public class StorageConfig {
     }
 
     private void persist() throws IOException {
+        persist(libraryPath, templatesPath);
+    }
+
+    private void persist(Path libraryPath, Path templatesPath) throws IOException {
         PathsConfigData data = new PathsConfigData(libraryPath.toString(), templatesPath.toString());
         objectMapper.writerWithDefaultPrettyPrinter().writeValue(CONFIG_FILE.toFile(), data);
     }

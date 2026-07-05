@@ -25,6 +25,12 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
                 <version>3.13.0</version>
+                <configuration>
+                    <!-- Spring resolves @PathVariable/@RequestParam names via
+                         reflection when no explicit name is given; without
+                         this flag that lookup fails at runtime. -->
+                    <parameters>true</parameters>
+                </configuration>
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>

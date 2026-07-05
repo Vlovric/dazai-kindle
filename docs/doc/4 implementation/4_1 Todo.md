@@ -2,7 +2,7 @@
 # Working on
 
 # 1.1. High prio
-- [ ] [[19 - Sidebar and SPA]]
+- [ ] [[X19 - Sidebar and SPA]]
 - [ ] [[X20 - Dashboard]]
 - [ ] [[21 - Paths screen]]
 # 1.2. Medium prio
