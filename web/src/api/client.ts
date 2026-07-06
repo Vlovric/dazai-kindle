@@ -24,3 +24,26 @@ export async function apiPut<T>(path: string, body: unknown): Promise<T>{
     }
     return response.json()
 }
+
+export async function apiPost<T>(path: string, body: unknown): Promise<T>{
+    const response = await fetch(`${BASE_URL}${path}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+    });
+    if(!response.ok){
+        await throwApiError(response, `POST ${path} failed: ${response.status} ${response.statusText}`);
+    }
+    return response.json()
+}
+
+export async function apiPostForm<T>(path: string, form: FormData): Promise<T>{
+    const response = await fetch(`${BASE_URL}${path}`, {
+        method: 'POST',
+        body: form,
+    });
+    if(!response.ok){
+        await throwApiError(response, `POST ${path} failed: ${response.status} ${response.statusText}`);
+    }
+    return response.json()
+}

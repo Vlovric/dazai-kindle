@@ -6,6 +6,7 @@ import { Dashboard } from './pages/Dashboard'
 import { Library } from './pages/Library'
 import { Templates } from './pages/Templates'
 import { Paths } from './pages/Paths'
+import { FullRun } from './pages/runs/FullRun'
 
 function App() {
   return (
@@ -16,6 +17,7 @@ function App() {
           <TopBar />
           <Routes>
             <Route path="/" element={<Dashboard />} />
+            <Route path="/new-run/full" element={<FullRun />} />
             <Route path="/library" element={<Library />} />
             <Route path="/templates" element={<Templates />} />
             <Route path="/paths" element={<Paths />} />
