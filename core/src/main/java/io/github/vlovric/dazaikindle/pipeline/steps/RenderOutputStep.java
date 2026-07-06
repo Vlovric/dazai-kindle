@@ -24,7 +24,8 @@ public class RenderOutputStep implements PipelineStep {
     @Override
     public StepResult execute(PipelineContext ctx) throws Exception {
         String title = resolveTitle(ctx);
-        Path outputPath = resolveOutputPath(title);
+        String author = resolveAuthor(ctx);
+        Path outputPath = resolveOutputPath(title, author);
 
         Path parent = outputPath.toAbsolutePath().getParent();
         if (parent != null) {
@@ -58,12 +59,29 @@ public class RenderOutputStep implements PipelineStep {
         return "Output";
     }
 
-    /** Strips characters illegal in filenames on Windows/macOS/Linux so the path is safe on all platforms. */
-    private Path resolveOutputPath(String title) {
+    /** Returns the EPUB author for the filename, or null if unavailable (falls back to title-only). */
+    private String resolveAuthor(PipelineContext ctx) {
+        return (ctx.epubAuthor != null && !ctx.epubAuthor.isBlank()) ? ctx.epubAuthor : null;
+    }
+
+    /**
+     * Builds "title_author.md" (or just "title.md" if the author couldn't be
+     * resolved) under outputDir, unless an explicit --output path was given.
+     */
+    private Path resolveOutputPath(String title, String author) {
         if (args.output() != null) {
             return args.output();
         }
-        String baseName = title.replaceAll("[\\\\/:*?\"<>|]", "_");
-        return Path.of(baseName + ".md");
+        String baseName = sanitize(title);
+        if (author != null) {
+            baseName += "_" + sanitize(author);
+        }
+        Path fileName = Path.of(baseName + ".md");
+        return args.outputDir() != null ? args.outputDir().resolve(fileName) : fileName;
+    }
+
+    /** Strips characters illegal in filenames on Windows/macOS/Linux so the path is safe on all platforms. */
+    private static String sanitize(String s) {
+        return s.replaceAll("[\\\\/:*?\"<>|]", "_");
     }
 }

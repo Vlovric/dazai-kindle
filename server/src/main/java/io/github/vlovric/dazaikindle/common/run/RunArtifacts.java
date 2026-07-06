@@ -13,7 +13,6 @@ import java.util.Optional;
  */
 public final class RunArtifacts {
 
-    public static final String OUTPUT = "output.md";
     public static final String DEBUG_DIR = "debug";
 
     private RunArtifacts() {

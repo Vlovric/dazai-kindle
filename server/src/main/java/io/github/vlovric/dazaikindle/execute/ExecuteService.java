@@ -65,13 +65,14 @@ public class ExecuteService {
             clippings,
             request.title() == null ? "" : request.title(),
             template,
-            draft.resolve(RunArtifacts.OUTPUT),
+            null, // output: let RenderOutputStep derive "title_author.md" from the pipeline's own result
             false,
             null,
             request.debugMode(),
             calibration,
             null,
-            request.overwriteFyodorTemplate()
+            request.overwriteFyodorTemplate(),
+            draft // outputDir: write the derived filename inside this run's folder
         );
 
         PipelineResult result;
