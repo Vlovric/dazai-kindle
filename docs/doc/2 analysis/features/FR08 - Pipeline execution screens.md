@@ -5,6 +5,13 @@ The user can choose the run type through the dashboard UI
 # 2. Features
 ## Mandatory prerequisites for all cases
 - All pipeline execution screens must stream server log messages to the UI and show errors to the user distinctly
+
+> **Implementation note (25 - Full run):** the backend for `/execute/full` (FR08_03)
+> is implemented so far, and it currently runs **synchronously** — the HTTP request
+> blocks until the run finishes, and there is no SSE log streaming yet
+> (`GET /execute/{runId}/logs` is an unimplemented stub). Live log streaming remains
+> the target design; it just hasn't been built yet. FR08_01 and FR08_02 have no
+> backend implementation at all yet.
 - - -
 ## FR08_01 - Execute calibration template generation run
 
@@ -114,6 +121,15 @@ Link to diagram
 | **Trigger**       | User uploads a new clippings file in the run configuration screen                                   |
 | **System action** | 1. Uploaded clippings file is stored and used for this run<br>2. Becomes the new default clippings file |
 | **UI reaction**   | Clippings file field shows the uploaded filename; run proceeds as in HP_01                          |
+
+> **Implementation note:** there's only ever one clippings file on disk — uploading
+> one always overwrites it, so "becomes the new default" is automatic rather than a
+> separate step. The full-run request's clippings reference is only checked for
+> presence; the file actually used is always that one fixed clippings file.
+> Similarly, "book/calibration/output template (upload or from library)" resolves
+> to either a freshly uploaded artifact (still sitting in its not-yet-executed
+> draft run) or an artifact reused from an existing **completed** run in the
+> library — not a separate flat pool of individually browsable uploads.
 
 ### 2.2. Edge cases
 #### **ID**: FR08_03-EC_01

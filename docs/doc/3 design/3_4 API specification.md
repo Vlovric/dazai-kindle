@@ -368,19 +368,31 @@
 
 - - -
 # files
+
+> **Implementation note (25 - Full run):** book/calibration/template/headingsTemplate
+> uploads are no longer a flat file pool. The first upload of a new-run session
+> creates a **draft run folder**, named by an opaque, server-minted `draftId`, under
+> the library path. Every upload response for these four types now includes that
+> `draftId`; the client must pass it back (`draftId` multipart field) on later
+> uploads in the same session so they land in the same folder. If a run is never
+> executed, the draft folder is deleted by a scheduled cleanup sweep once it's past
+> a TTL (currently 24h) — there is no separate "delete an orphaned upload" affordance,
+> since nothing is ever orphaned outside a run folder. `POST /files/clippings` is
+> unaffected by any of this — see its note below.
+
 ## POST /files/book
 
-| **Purpose:**          | Uploading a book file to the library for use in runs |
-| --------------------- | ---------------------------------------------------- |
-| **Authentication:**   | `PUBLIC`                                             |
-| **Request payload:**  | `multipart/form-data` — book file                    |
-| **Response payload:** | Uploaded file reference                              |
+| **Purpose:**          | Uploading a book file into a draft run, for use once that run executes |
+| --------------------- | ------------------------------------------------------------------------ |
+| **Authentication:**   | `PUBLIC`                                                                |
+| **Request payload:**  | `multipart/form-data` — book file, plus optional `draftId` field to target an existing draft (omit to start a new one) |
+| **Response payload:** | Uploaded file reference, including the draft's id                       |
 
 ### Success response
 
-| **Code:** | 201                      |
-| --------- | ------------------------ |
-| **Data:** | `{ name, lastModified }` |
+| **Code:** | 201                                  |
+| --------- | ------------------------------------- |
+| **Data:** | `{ name, lastModified, draftId }`    |
 
 ### Error response
 
@@ -392,17 +404,21 @@
 - - -
 ## POST /files/clippings
 
-| **Purpose:**          | Uploading a clippings file to the library for use in runs |
-| --------------------- | --------------------------------------------------------- |
-| **Authentication:**   | `PUBLIC`                                                  |
-| **Request payload:**  | `multipart/form-data` — clippings file                    |
-| **Response payload:** | Uploaded file reference                                   |
+| **Purpose:**          | Uploading a clippings file, replacing the single current clippings file |
+| --------------------- | ------------------------------------------------------------------------- |
+| **Authentication:**   | `PUBLIC`                                                                  |
+| **Request payload:**  | `multipart/form-data` — clippings file                                    |
+| **Response payload:** | Uploaded file reference                                                   |
+
+> Clippings are not run-scoped: there is one fixed clippings file on disk, and this
+> endpoint always overwrites it. It takes no `draftId` and its response's `draftId`
+> is always `null`.
 
 ### Success response
 
-| **Code:** | 201                      |
-| --------- | ------------------------ |
-| **Data:** | `{ name, lastModified }` |
+| **Code:** | 201                                |
+| --------- | ------------------------------------ |
+| **Data:** | `{ name, lastModified, draftId: null }` |
 
 ### Error response
 
@@ -414,17 +430,17 @@
 - - -
 ## POST /files/calibration
 
-| **Purpose:**          | Uploading a calibration file to the library for use in runs |
-| --------------------- | ----------------------------------------------------------- |
-| **Authentication:**   | `PUBLIC`                                                    |
-| **Request payload:**  | `multipart/form-data` — calibration file                    |
-| **Response payload:** | Uploaded file reference                                     |
+| **Purpose:**          | Uploading a calibration file into a draft run, for use once that run executes |
+| --------------------- | --------------------------------------------------------------------------------- |
+| **Authentication:**   | `PUBLIC`                                                                          |
+| **Request payload:**  | `multipart/form-data` — calibration file, plus optional `draftId` field           |
+| **Response payload:** | Uploaded file reference, including the draft's id                                 |
 
 ### Success response
 
-| **Code:** | 201                      |
-| --------- | ------------------------ |
-| **Data:** | `{ name, lastModified }` |
+| **Code:** | 201                                  |
+| --------- | ------------------------------------- |
+| **Data:** | `{ name, lastModified, draftId }`    |
 
 ### Error response
 
@@ -436,17 +452,17 @@
 - - -
 ## POST /files/template
 
-| **Purpose:**          | Uploading an output template file to the library for use in runs |
-| --------------------- | ---------------------------------------------------------------- |
-| **Authentication:**   | `PUBLIC`                                                         |
-| **Request payload:**  | `multipart/form-data` — template file                            |
-| **Response payload:** | Uploaded file reference                                          |
+| **Purpose:**          | Uploading an output template file into a draft run, for use once that run executes |
+| --------------------- | ---------------------------------------------------------------------------------------- |
+| **Authentication:**   | `PUBLIC`                                                                                 |
+| **Request payload:**  | `multipart/form-data` — template file, plus optional `draftId` field                     |
+| **Response payload:** | Uploaded file reference, including the draft's id                                        |
 
 ### Success response
 
-| **Code:** | 201                      |
-| --------- | ------------------------ |
-| **Data:** | `{ name, lastModified }` |
+| **Code:** | 201                                  |
+| --------- | ------------------------------------- |
+| **Data:** | `{ name, lastModified, draftId }`    |
 
 ### Error response
 
@@ -458,17 +474,17 @@
 - - -
 ## POST /files/headingsTemplate
 
-| **Purpose:**          | Uploading a headings template file to the library for use in runs |
-| --------------------- | ----------------------------------------------------------------- |
-| **Authentication:**   | `PUBLIC`                                                          |
-| **Request payload:**  | `multipart/form-data` — headings template file                    |
-| **Response payload:** | Uploaded file reference                                           |
+| **Purpose:**          | Uploading a headings template file into a draft run, for use once that run executes |
+| --------------------- | ------------------------------------------------------------------------------------------ |
+| **Authentication:**   | `PUBLIC`                                                                                   |
+| **Request payload:**  | `multipart/form-data` — headings template file, plus optional `draftId` field              |
+| **Response payload:** | Uploaded file reference, including the draft's id                                          |
 
 ### Success response
 
-| **Code:** | 201                      |
-| --------- | ------------------------ |
-| **Data:** | `{ name, lastModified }` |
+| **Code:** | 201                                  |
+| --------- | ------------------------------------- |
+| **Data:** | `{ name, lastModified, draftId }`    |
 
 ### Error response
 
@@ -480,17 +496,23 @@
 - - -
 ## GET /files
 
-| **Purpose:**          | Fetching a paginated, searchable list of uploaded files of a given type |
-| --------------------- | ----------------------------------------------------------------------- |
-| **Authentication:**   | `PUBLIC`                                                                |
-| **Request payload:**  | `?type=book\|calibration\|template\|headingTemplate&search=&page=`      |
-| **Response payload:** | Paginated list of files                                                 |
+| **Purpose:**          | Fetching a paginated, searchable list of past runs that have an artifact of the given type, for reuse in a new run |
+| --------------------- | ----------------------------------------------------------------------------------------------------------------- |
+| **Authentication:**   | `PUBLIC`                                                                                                          |
+| **Request payload:**  | `?type=book\|calibration\|template\|headingTemplate&search=&page=`                                                |
+| **Response payload:** | Paginated list of matching completed runs                                                                         |
+
+> "Choose from Library" reuses an artifact from an existing **completed** run
+> (draft/in-progress runs are excluded), not a separate flat upload pool — the
+> library is a collection of runs, one per book (see FR07 / issue 23). Each entry's
+> `name` is that run's (book's) title, and `lastModified` reflects that specific
+> artifact file, not the whole run folder. `draftId` in each entry is always `null`.
 
 ### Success response
 
-| **Code:** | 200                                                            |
-| --------- | -------------------------------------------------------------- |
-| **Data:** | `{ files: [{ name, lastModified }], totalPages, currentPage }` |
+| **Code:** | 200                                                                          |
+| --------- | ----------------------------------------------------------------------------- |
+| **Data:** | `{ files: [{ name, lastModified, draftId: null }], totalPages, currentPage }` |
 
 ### Error response
 
@@ -501,6 +523,15 @@
 
 - - -
 # execute
+
+> **Implementation note (25 - Full run):** only `POST /execute/full` is implemented
+> so far; `/execute/generate` and `/execute/headings` below are still unimplemented
+> stubs in the spec. Full run execution currently runs **synchronously** — the
+> request blocks until the pipeline finishes, then returns 202 with the result.
+> `GET /execute/{runId}/logs` (SSE log streaming) is not implemented yet; the
+> `runId` in the response is already forward-compatible with it though (see below),
+> so wiring up async execution + SSE later shouldn't need another contract change.
+
 ## POST /execute/full
 
 | **Purpose:**          | Starting a full parsing run                                                                                    |
@@ -508,6 +539,23 @@
 | **Authentication:**   | `PUBLIC`                                                                                                       |
 | **Request payload:**  | `{ bookRef, calibrationRef, clippingsRef, templateRef, title?, debugMode, overwriteFyodorTemplate }`          |
 | **Response payload:** | Run ID for log streaming                                                                                       |
+
+> `bookRef` / `calibrationRef` / `templateRef` are each resolved as *either* an
+> existing run's title (reusing that artifact from a completed run in the
+> library — what "Choose from Library" passes) *or* a `draftId` returned from a
+> prior `POST /files/*` upload (a freshly uploaded artifact still sitting in its
+> draft folder). `clippingsRef` is only checked for presence — the actual file
+> used is always the single fixed clippings file (see `POST /files/clippings`
+> above), not resolved from the ref's value.
+>
+> On success, the draft folder backing the run (whichever ref resolved to one, or
+> a newly minted one if every ref pointed at existing library runs) is finalized:
+> `run.json` is written and the folder is renamed to the book's title, overwriting
+> any prior run for that same book. `runId` in the response is that draft's
+> **opaque id**, not the final title-based folder name — it stays stable across the
+> whole flow (the client already has it from the upload responses) and won't need
+> to change meaning once the run needs to be addressable *before* its title is known
+> (i.e. once async execution + SSE streaming are added).
 
 ### Success response
 
@@ -529,6 +577,8 @@
 
 - - -
 ## POST /execute/generate
+
+> **Not yet implemented.**
 
 | **Purpose:**          | Starting a calibration file generation run |
 | --------------------- | ------------------------------------------ |
@@ -557,6 +607,8 @@
 - - -
 ## POST /execute/headings
 
+> **Not yet implemented.**
+
 | **Purpose:**          | Starting a headings-only parsing run                                  |
 | --------------------- | --------------------------------------------------------------------- |
 | **Authentication:**   | `PUBLIC`                                                              |
@@ -583,6 +635,9 @@
 
 - - -
 ## GET /execute/{runId}/logs
+
+> **Not yet implemented.** `/execute/full` runs synchronously for now (see note
+> above); this endpoint will matter once execution becomes asynchronous.
 
 | **Purpose:**          | SSE stream of log output for an active run         |
 | --------------------- | -------------------------------------------------- |

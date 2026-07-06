@@ -3,10 +3,6 @@
 
 - [ ] [[FR08 - Pipeline execution screens#FR08_03 - Execute full run]]
 
-Prvo uploadam, ali gdje spremam? Moram imat spremljeno da bi samo dao referencu
-Mozda temporary folder neki pa sve prebacit u run folder nakon runna sto zavrsi? Al sta ak uploada i ne zavrsi run? Moro bi onda onaj unsaved changes prompt da ak cancelea se obrise sve mozda
+@ResponseStatus(HttpStatus.ACCEPTED)
 
-converted .epub prebacujem u run file
-output ide u run file
-
-pisem run.json nakon svega za taj run
+Jel mi ovo treba svugdje? Kak do sad endpointi rade bez toga, default 200?
