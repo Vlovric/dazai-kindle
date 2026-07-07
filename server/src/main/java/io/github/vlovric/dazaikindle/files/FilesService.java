@@ -41,12 +41,17 @@ public class FilesService {
         return storeIntoDraft(file, FileType.CALIBRATION, draftId);
     }
 
-    public UploadedFileResponse uploadTemplate(MultipartFile file, String draftId) {
-        return storeIntoDraft(file, FileType.TEMPLATE, draftId);
+    /**
+     * Templates aren't run-scoped - they live flatly in the Templates
+     * storage path (FR09), keyed by their own filename rather than a
+     * per-run draftId, so they survive independently of any run.
+     */
+    public UploadedFileResponse uploadTemplate(MultipartFile file) {
+        return storeIntoTemplates(file, FileType.TEMPLATE);
     }
 
-    public UploadedFileResponse uploadHeadingsTemplate(MultipartFile file, String draftId) {
-        return storeIntoDraft(file, FileType.HEADING_TEMPLATE, draftId);
+    public UploadedFileResponse uploadHeadingsTemplate(MultipartFile file) {
+        return storeIntoTemplates(file, FileType.HEADING_TEMPLATE);
     }
 
     /**
@@ -60,19 +65,9 @@ public class FilesService {
     }
 
     public FileListResponse listFiles(FileType type, String search, int page) {
-        List<UploadedFileResponse> matches;
-        try (var dirs = Files.list(storageConfig.getLibraryPath())) {
-            matches = dirs
-                .filter(Files::isDirectory)
-                .filter(dir -> !DraftRunService.looksLikeDraft(dir))
-                .filter(dir -> matchesSearch(dir, search))
-                .map(dir -> toResponse(dir, type))
-                .flatMap(Optional::stream)
-                .sorted((a, b) -> b.lastModified().compareTo(a.lastModified()))
-                .toList();
-        } catch (IOException e) {
-            throw new UncheckedIOException("Failed to list files of type " + type, e);
-        }
+        List<UploadedFileResponse> matches = type.isTemplate()
+            ? listTemplateFiles(type, search)
+            : listRunFiles(type, search);
 
         int totalPages = Math.max(1, (matches.size() + PAGE_SIZE - 1) / PAGE_SIZE);
         int currentPage = Math.min(Math.max(page, 0), totalPages - 1);
@@ -83,11 +78,17 @@ public class FilesService {
     }
 
     /**
-     * Resolves a ref to an artifact Path. A ref is either an existing run's
-     * title (reuse from the library) or a draftId (a freshly uploaded
-     * artifact still sitting in its draft folder).
+     * Resolves a ref to an artifact Path. For book/calibration a ref is
+     * either an existing run's title (reuse from the library) or a draftId
+     * (a freshly uploaded artifact still sitting in its draft folder). For
+     * templates a ref is simply the template's filename in the Templates
+     * storage path - templates were never run/draft-scoped to begin with.
      */
     public Optional<Path> resolveArtifact(FileType type, String ref) {
+        if (type.isTemplate()) {
+            Path template = storageConfig.getTemplatesPath().resolve(ref);
+            return Files.isRegularFile(template) ? Optional.of(template) : Optional.empty();
+        }
         Path asRunTitle = storageConfig.getLibraryPath().resolve(DraftRunService.sanitizeTitle(ref));
         Optional<Path> fromRun = RunArtifacts.find(asRunTitle, type.baseName());
         if (fromRun.isPresent()) {
@@ -112,9 +113,93 @@ public class FilesService {
         return new UploadedFileResponse(file.getOriginalFilename(), Instant.now(), draft.getFileName().toString());
     }
 
-    private boolean matchesSearch(Path dir, String search) {
+    /**
+     * Stores an uploaded template under its own original filename directly
+     * in the Templates storage path (silently overwriting a same-named
+     * template, per FR09_01-EC_02) rather than renaming it into a draft.
+     */
+    private UploadedFileResponse storeIntoTemplates(MultipartFile file, FileType type) {
+        validateExtension(file, type);
+        String safeName = sanitizedFileName(file.getOriginalFilename());
+        validateTemplateNaming(safeName, type);
+        Path target = storageConfig.getTemplatesPath().resolve(safeName);
+        transferTo(file, target);
+        return new UploadedFileResponse(file.getOriginalFilename(), Instant.now(), null);
+    }
+
+    /**
+     * Listing tells output and heading templates apart purely by the "_h"
+     * filename convention (see isHeadingTemplate), so upload has to enforce
+     * the same convention against the endpoint used - otherwise a file
+     * uploaded as a heading template but not named "*_h.ftl" would silently
+     * resurface in the output template list instead, and vice versa.
+     */
+    private void validateTemplateNaming(String filename, FileType type) {
+        boolean namedAsHeading = stemOf(filename).endsWith("_h");
+        boolean expectedHeading = type == FileType.HEADING_TEMPLATE;
+        if (namedAsHeading != expectedHeading) {
+            throw InvalidFileTypeException.forTemplateNaming(filename, expectedHeading);
+        }
+    }
+
+    /**
+     * Strips any directory components from an uploaded filename so it can't
+     * be used to write outside the Templates storage path (e.g. "../../foo").
+     */
+    private String sanitizedFileName(String originalFilename) {
+        String name = Path.of(originalFilename).getFileName().toString();
+        if (name.isBlank() || name.equals(".") || name.equals("..")) {
+            throw InvalidFileTypeException.forExtension(originalFilename);
+        }
+        return name;
+    }
+
+    private List<UploadedFileResponse> listTemplateFiles(FileType type, String search) {
+        try (var files = Files.list(storageConfig.getTemplatesPath())) {
+            return files
+                .filter(Files::isRegularFile)
+                .filter(f -> isHeadingTemplate(f) == (type == FileType.HEADING_TEMPLATE))
+                .filter(f -> matchesSearch(f, search))
+                .map(f -> new UploadedFileResponse(f.getFileName().toString(), lastModifiedOf(f), null))
+                .sorted((a, b) -> b.lastModified().compareTo(a.lastModified()))
+                .toList();
+        } catch (IOException e) {
+            throw new UncheckedIOException("Failed to list files of type " + type, e);
+        }
+    }
+
+    private List<UploadedFileResponse> listRunFiles(FileType type, String search) {
+        try (var dirs = Files.list(storageConfig.getLibraryPath())) {
+            return dirs
+                .filter(Files::isDirectory)
+                .filter(dir -> !DraftRunService.looksLikeDraft(dir))
+                .filter(dir -> matchesSearch(dir, search))
+                .map(dir -> toResponse(dir, type))
+                .flatMap(Optional::stream)
+                .sorted((a, b) -> b.lastModified().compareTo(a.lastModified()))
+                .toList();
+        } catch (IOException e) {
+            throw new UncheckedIOException("Failed to list files of type " + type, e);
+        }
+    }
+
+    /**
+     * Per FR09: a template's filename determines its kind - one ending in
+     * "_h" (before the extension) is a headings template, everything else
+     * uploaded as a template is an output template.
+     */
+    private boolean isHeadingTemplate(Path file) {
+        return stemOf(file.getFileName().toString()).endsWith("_h");
+    }
+
+    private String stemOf(String filename) {
+        int dot = filename.lastIndexOf('.');
+        return dot < 0 ? filename : filename.substring(0, dot);
+    }
+
+    private boolean matchesSearch(Path path, String search) {
         return search == null || search.isBlank()
-            || dir.getFileName().toString().toLowerCase(Locale.ROOT).contains(search.toLowerCase(Locale.ROOT));
+            || path.getFileName().toString().toLowerCase(Locale.ROOT).contains(search.toLowerCase(Locale.ROOT));
     }
 
     private Optional<UploadedFileResponse> toResponse(Path runDir, FileType type) {

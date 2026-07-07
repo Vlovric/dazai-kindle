@@ -2,7 +2,9 @@ package io.github.vlovric.dazaikindle.execute;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
 import java.util.Optional;
 import java.util.stream.Stream;
 
@@ -52,13 +54,15 @@ public class ExecuteService {
         requireNonBlank(request.clippingsRef(), "clippingsRef");
         requireNonBlank(request.templateRef(), "templateRef");
 
-        Path book = requireArtifact(FileType.BOOK, request.bookRef());
-        Path calibration = requireArtifact(FileType.CALIBRATION, request.calibrationRef());
-        Path template = requireArtifact(FileType.TEMPLATE, request.templateRef());
-        Path clippings = storageConfig.getClippingsFile();
-
         Path draft = draftFolderAmong(request).orElseGet(() -> draftRunService.newDraft(storageConfig));
         String runId = draft.getFileName().toString();
+
+        Path book = resolveIntoDraft(FileType.BOOK, request.bookRef(), draft);
+        Path calibration = resolveIntoDraft(FileType.CALIBRATION, request.calibrationRef(), draft);
+        // Templates live flatly in the Templates storage path, not per-run -
+        // they're never touched by finalize()'s delete-then-move, so no copy needed.
+        Path template = requireArtifact(FileType.TEMPLATE, request.templateRef());
+        Path clippings = storageConfig.getClippingsFile();
 
         AppArgs args = new AppArgs(
             book,
@@ -99,8 +103,39 @@ public class ExecuteService {
             .orElseThrow(() -> new FileReferenceNotFoundException(ref));
     }
 
+    /**
+     * Resolves a ref and, if it points at an artifact reused from a completed
+     * library run rather than one already sitting in this draft, copies it
+     * into the draft. Without this, finalize()'s delete-then-move of the old
+     * run folder (when reusing artifacts from the same book) would destroy
+     * the source files before the new run folder ever had its own copies.
+     */
+    private Path resolveIntoDraft(FileType type, String ref, Path draft) {
+        Path artifact = requireArtifact(type, ref);
+        if (artifact.getParent().equals(draft)) {
+            return artifact;
+        }
+        Path target = draft.resolve(type.baseName() + extensionOf(artifact));
+        try {
+            Files.copy(artifact, target, StandardCopyOption.REPLACE_EXISTING);
+        } catch (IOException e) {
+            throw new UncheckedIOException("Failed to copy artifact into draft " + draft, e);
+        }
+        return target;
+    }
+
+    private String extensionOf(Path path) {
+        String name = path.getFileName().toString();
+        int dot = name.lastIndexOf('.');
+        return dot < 0 ? "" : name.substring(dot);
+    }
+
+    /**
+     * Only book/calibration can point at an already-existing draft folder -
+     * templateRef never does, since templates aren't run/draft-scoped.
+     */
     private Optional<Path> draftFolderAmong(FullRunRequest request) {
-        return Stream.of(request.bookRef(), request.calibrationRef(), request.templateRef())
+        return Stream.of(request.bookRef(), request.calibrationRef())
             .map(ref -> storageConfig.getLibraryPath().resolve(ref))
             .filter(DraftRunService::looksLikeDraft)
             .findFirst();

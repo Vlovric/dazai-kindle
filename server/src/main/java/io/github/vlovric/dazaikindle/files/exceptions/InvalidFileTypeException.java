@@ -17,4 +17,9 @@ public class InvalidFileTypeException extends ApiException {
     public static InvalidFileTypeException forExtension(String filename) {
         return new InvalidFileTypeException("Unsupported file extension: " + filename);
     }
+
+    public static InvalidFileTypeException forTemplateNaming(String filename, boolean expectedHeading) {
+        String expected = expectedHeading ? "must end in \"_h\"" : "must not end in \"_h\"";
+        return new InvalidFileTypeException("Template filename " + expected + ": " + filename);
+    }
 }

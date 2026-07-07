@@ -5,7 +5,10 @@ import java.util.Set;
 import io.github.vlovric.dazaikindle.files.exceptions.InvalidFileTypeException;
 
 /**
- * The four artifact kinds resolvable from a run/draft folder. Clippings are
+ * The four resolvable artifact kinds. BOOK and CALIBRATION are run/draft
+ * scoped, living inside a run's library folder. TEMPLATE and HEADING_TEMPLATE
+ * are not - they live flatly in the Templates storage path, named by their
+ * own filename, independent of any run's lifecycle (see FR09). Clippings are
  * deliberately not a FileType - they're a single fixed file, not per-run.
  */
 public enum FileType {
@@ -29,6 +32,10 @@ public enum FileType {
 
     public boolean isAllowedExtension(String extension) {
         return allowedExtensions.contains(extension.toLowerCase());
+    }
+
+    public boolean isTemplate() {
+        return this == TEMPLATE || this == HEADING_TEMPLATE;
     }
 
     /**

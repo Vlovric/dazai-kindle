@@ -54,11 +54,8 @@ public class FilesController {
     @ApiResponse(responseCode = "400", description = "Invalid file type")
     @PostMapping("/api/files/template")
     @ResponseStatus(HttpStatus.CREATED)
-    public UploadedFileResponse uploadTemplate(
-        @RequestParam("file") MultipartFile file,
-        @RequestParam(required = false) String draftId
-    ) {
-        return filesService.uploadTemplate(file, draftId);
+    public UploadedFileResponse uploadTemplate(@RequestParam("file") MultipartFile file) {
+        return filesService.uploadTemplate(file);
     }
 
     @Operation(summary = "Upload a headings template file")
@@ -66,11 +63,8 @@ public class FilesController {
     @ApiResponse(responseCode = "400", description = "Invalid file type")
     @PostMapping("/api/files/headingsTemplate")
     @ResponseStatus(HttpStatus.CREATED)
-    public UploadedFileResponse uploadHeadingsTemplate(
-        @RequestParam("file") MultipartFile file,
-        @RequestParam(required = false) String draftId
-    ) {
-        return filesService.uploadHeadingsTemplate(file, draftId);
+    public UploadedFileResponse uploadHeadingsTemplate(@RequestParam("file") MultipartFile file) {
+        return filesService.uploadHeadingsTemplate(file);
     }
 
     @Operation(summary = "Upload the clippings file, replacing the current one")

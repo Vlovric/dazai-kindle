@@ -15,8 +15,8 @@ const ACCEPT: Record<ArtifactType, string> = {
 const HINT: Record<ArtifactType, string> = {
     book: "Drag & drop your book file, or click to upload",
     calibration: "Drag & drop your calibration file, or click to upload",
-    template: "Drag & drop your output template, or click to upload",
-    headingsTemplate: "Drag & drop your headings template, or click to upload",
+    template: "Drag & drop your output template (filename must not end in \"_h\"), or click to upload",
+    headingsTemplate: "Drag & drop your headings template (filename must end in \"_h\"), or click to upload",
 }
 
 type Mode = "upload" | "library"
@@ -59,8 +59,10 @@ export function ArtifactField({ type, draftId, onDraftIdResolved, onRefChange }:
             setSelectedName(response.name)
             if (response.draftId) {
                 onDraftIdResolved(response.draftId)
-                onRefChange(response.draftId)
             }
+            // Templates aren't draft-scoped - their upload response has no
+            // draftId, so the ref is just the template's own filename.
+            onRefChange(response.draftId ?? response.name)
         } catch (e) {
             setError(e instanceof Error ? e.message : "Upload failed")
         } finally {

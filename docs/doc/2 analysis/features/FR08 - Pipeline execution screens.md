@@ -126,10 +126,17 @@ Link to diagram
 > one always overwrites it, so "becomes the new default" is automatic rather than a
 > separate step. The full-run request's clippings reference is only checked for
 > presence; the file actually used is always that one fixed clippings file.
-> Similarly, "book/calibration/output template (upload or from library)" resolves
-> to either a freshly uploaded artifact (still sitting in its not-yet-executed
-> draft run) or an artifact reused from an existing **completed** run in the
-> library — not a separate flat pool of individually browsable uploads.
+> Similarly, "book/calibration (upload or from library)" resolves to either a
+> freshly uploaded artifact (still sitting in its not-yet-executed draft run) or an
+> artifact reused from an existing **completed** run in the library — not a
+> separate flat pool of individually browsable uploads.
+>
+> The output template (and, for FR08_02, the headings template) is different: it's
+> never run/draft-scoped. It resolves directly by filename from the Templates
+> storage path (see FR09 / FR10), which *is* a flat pool of individually browsable
+> uploads — "upload or from library" for a template means either uploading a new
+> file there or picking an existing one from that same pool, never from a run's
+> draft or from another completed run.
 
 ### 2.2. Edge cases
 #### **ID**: FR08_03-EC_01
