@@ -7,6 +7,7 @@ import { Library } from './pages/Library'
 import { Templates } from './pages/Templates'
 import { Paths } from './pages/Paths'
 import { FullRun } from './pages/runs/FullRun'
+import { CalibrationRun } from './pages/runs/CalibrationRun'
 
 function App() {
   return (
@@ -18,6 +19,7 @@ function App() {
           <Routes>
             <Route path="/" element={<Dashboard />} />
             <Route path="/new-run/full" element={<FullRun />} />
+            <Route path="/new-run/calibration" element={<CalibrationRun />} />
             <Route path="/library" element={<Library />} />
             <Route path="/templates" element={<Templates />} />
             <Route path="/paths" element={<Paths />} />

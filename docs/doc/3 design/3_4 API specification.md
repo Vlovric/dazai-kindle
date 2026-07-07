@@ -603,19 +603,29 @@
 - - -
 ## POST /execute/generate
 
-> **Not yet implemented.**
+| **Purpose:**          | Starting a calibration file generation run                |
+| --------------------- | ----------------------------------------------------------- |
+| **Authentication:**   | `PUBLIC`                                                    |
+| **Request payload:**  | `{ bookRef, debugMode }`                                    |
+| **Response payload:** | The generated calibration file itself (download)            |
 
-| **Purpose:**          | Starting a calibration file generation run |
-| --------------------- | ------------------------------------------ |
-| **Authentication:**   | `PUBLIC`                                   |
-| **Request payload:**  | `{ bookRef, debugMode }`                   |
-| **Response payload:** | Run ID for log streaming                   |
+> `bookRef` resolves the same way as in `POST /execute/full` (either an existing
+> run's title or a draftId from a prior `POST /files/book` upload). Unlike a full
+> run, this endpoint never creates or finalizes a library entry: the freshly
+> generated `calibration.txt` (a template with blank Kindle location fields the user
+> fills in by hand) is streamed straight back as the response body
+> (`Content-Disposition: attachment`) and is never written anywhere under the
+> DazaiKindle folder. If `bookRef` pointed at a fresh upload rather than an existing
+> completed run, that upload's scratch draft folder is deleted once the response is
+> built, so nothing is left behind either way. It's on the user to save the
+> downloaded file wherever they like and re-upload it (filled in) as the
+> `calibrationRef` of a later `POST /execute/full` call.
 
 ### Success response
 
-| **Code:** | 202         |
-| --------- | ----------- |
-| **Data:** | `{ runId }` |
+| **Code:** | 200                                                |
+| --------- | --------------------------------------------------- |
+| **Data:** | File download (`Content-Disposition: attachment`)   |
 
 ### Error response
 

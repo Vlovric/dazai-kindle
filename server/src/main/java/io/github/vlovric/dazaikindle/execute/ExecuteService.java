@@ -17,6 +17,8 @@ import io.github.vlovric.dazaikindle.common.run.DraftRunService;
 import io.github.vlovric.dazaikindle.common.run.RunArtifacts;
 import io.github.vlovric.dazaikindle.common.run.RunMetadata;
 import io.github.vlovric.dazaikindle.common.storage.StorageConfig;
+import io.github.vlovric.dazaikindle.execute.dto.CalibrationFileDownload;
+import io.github.vlovric.dazaikindle.execute.dto.CalibrationRunRequest;
 import io.github.vlovric.dazaikindle.execute.dto.ExecuteResponse;
 import io.github.vlovric.dazaikindle.execute.dto.FullRunRequest;
 import io.github.vlovric.dazaikindle.execute.exceptions.MissingRequiredFieldException;
@@ -98,6 +100,69 @@ public class ExecuteService {
         return new ExecuteResponse(runId);
     }
 
+    /**
+     * Generates a fillable calibration template file (blank Kindle location
+     * fields next to each TOC heading, see PrintCalibrationTemplateStep) from
+     * a book and hands its bytes straight back for download - nothing is left
+     * in the DazaiKindle library afterwards. It's on the user to store the
+     * downloaded file and re-upload it (filled in) when they later run a full
+     * run. If the book itself was a fresh upload rather than one reused from
+     * an existing completed run, its scratch draft folder is deleted too,
+     * since it only existed to stage the book for this one-off action.
+     */
+    public CalibrationFileDownload executeCalibrationRun(CalibrationRunRequest request) {
+        requireNonBlank(request.bookRef(), "bookRef");
+
+        Path book = requireArtifact(FileType.BOOK, request.bookRef());
+        Path bookDraft = book.getParent();
+
+        Path tempDir;
+        try {
+            tempDir = Files.createTempDirectory("dazaikindle-calibration-");
+        } catch (IOException e) {
+            throw new UncheckedIOException("Failed to create temp directory for calibration generation", e);
+        }
+        Path calibrationTemplate = tempDir.resolve("calibration.txt");
+
+        AppArgs args = new AppArgs(
+            book,
+            null,
+            "",
+            null,
+            null,
+            false,
+            null,
+            request.debugMode(),
+            null,
+            calibrationTemplate,
+            false,
+            null
+        );
+
+        byte[] content;
+        try {
+            try {
+                if (request.debugMode()) {
+                    new Pipeline(args, tempDir.resolve(RunArtifacts.DEBUG_DIR)).run();
+                } else {
+                    new Pipeline(args).run();
+                }
+            } catch (Exception e) {
+                throw new PipelineExecutionException(e);
+            }
+            content = Files.readAllBytes(calibrationTemplate);
+        } catch (IOException e) {
+            throw new UncheckedIOException("Failed to read generated calibration file " + calibrationTemplate, e);
+        } finally {
+            DraftRunService.deleteRecursively(tempDir);
+            if (DraftRunService.looksLikeDraft(bookDraft)) {
+                DraftRunService.deleteRecursively(bookDraft);
+            }
+        }
+
+        return new CalibrationFileDownload(content, "calibration.txt");
+    }
+
     private Path requireArtifact(FileType type, String ref) {
         return filesService.resolveArtifact(type, ref)
             .orElseThrow(() -> new FileReferenceNotFoundException(ref));
@@ -135,7 +200,11 @@ public class ExecuteService {
      * templateRef never does, since templates aren't run/draft-scoped.
      */
     private Optional<Path> draftFolderAmong(FullRunRequest request) {
-        return Stream.of(request.bookRef(), request.calibrationRef())
+        return draftFolderAmong(request.bookRef(), request.calibrationRef());
+    }
+
+    private Optional<Path> draftFolderAmong(String... refs) {
+        return Stream.of(refs)
             .map(ref -> storageConfig.getLibraryPath().resolve(ref))
             .filter(DraftRunService::looksLikeDraft)
             .findFirst();

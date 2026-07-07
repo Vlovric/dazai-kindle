@@ -5,7 +5,7 @@ import { RunCard } from "../components/RunCard"
 
 const RUN_TYPES = [
     { title: "Full Run", explanation: "Parse clippings and render output using a template.", path: "/new-run/full" },
-    { title: "Generate Calibration File", explanation: "Fit Kindle locations to byte offsets from a book.", path: null },
+    { title: "Generate Calibration File", explanation: "Fit Kindle locations to byte offsets from a book.", path: "/new-run/calibration" },
     { title: "Headings Only", explanation: "Render headings without processing clippings.", path: null },
 ]
 

@@ -11,3 +11,8 @@ export interface FullRunRequest {
 export interface ExecuteResponse {
     runId: string
 }
+
+export interface CalibrationRunRequest {
+    bookRef: string
+    debugMode: boolean
+}

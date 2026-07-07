@@ -6,19 +6,28 @@ The user can choose the run type through the dashboard UI
 ## Mandatory prerequisites for all cases
 - All pipeline execution screens must stream server log messages to the UI and show errors to the user distinctly
 
-> **Implementation note (25 - Full run):** the backend for `/execute/full` (FR08_03)
-> is implemented so far, and it currently runs **synchronously** — the HTTP request
-> blocks until the run finishes, and there is no SSE log streaming yet
-> (`GET /execute/{runId}/logs` is an unimplemented stub). Live log streaming remains
-> the target design; it just hasn't been built yet. FR08_01 and FR08_02 have no
-> backend implementation at all yet.
+> **Implementation note (25 - Full run, 26 - Calibration run):** the backend for
+> `/execute/full` (FR08_03) and `/execute/generate` (FR08_01) is implemented so far,
+> and both run **synchronously** — the HTTP request blocks until the run finishes,
+> and there is no SSE log streaming yet (`GET /execute/{runId}/logs` is an
+> unimplemented stub). Live log streaming remains the target design; it just hasn't
+> been built yet. FR08_02 has no backend implementation at all yet.
+>
+> Unlike FR08_03, FR08_01 doesn't produce a library entry at all: `/execute/generate`
+> responds with the generated `calibration.txt` itself (`Content-Disposition:
+> attachment`), and nothing is left behind in the DazaiKindle folder afterwards - not
+> even a scratch draft for a freshly uploaded book. The client saves the file wherever
+> the user chooses (an OS save-location picker via the File System Access API where
+> supported, e.g. Chromium; a plain browser download elsewhere) and it's entirely on
+> the user to hold onto it and upload it again (filled in) as the calibration file of
+> a later full run.
 - - -
 ## FR08_01 - Execute calibration template generation run
 
 | ID            | FR08_01                                                                                                                                             |
 | ------------- | --------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Requirement   | Executing a calibration template generation run through the UI                                                                                      |
-| Explanation   | The user selects a book file and optionally enables debug mode, then starts a calibration generation run. Logs are streamed live and the outcome is shown on completion. Internal run behavior is documented in [[FR04 - Parse calibration]] |
+| Explanation   | The user selects a book file and optionally enables debug mode, then starts a calibration generation run. The result is a downloadable calibration file, not a library entry — the user picks where to save it and is responsible for re-uploading it (filled in) when running a later full run. Internal run behavior is documented in [[FR04 - Parse calibration]] |
 | Priority      |                                                                                                                                                     |
 | FR dependency | FR04, FR06                                                                                                                                          |
 ### 2.1. Happy path
@@ -29,8 +38,8 @@ The user can choose the run type through the dashboard UI
 | **Scenario**      | Successful calibration generation run                                                                                                                        |
 | **Precondition**  |                                                                                                                                                              |
 | **Trigger**       | User selects a book file (upload or from library) and clicks Generate                                                                                        |
-| **System action** | 1. Server starts the calibration generation process<br>2. Log output is streamed to the UI via SSE<br>3. Run completes successfully                           |
-| **UI reaction**   | Log lines appear in real time; success notification shown when run completes                                                                                 |
+| **System action** | 1. Server starts the calibration generation process<br>2. Log output is streamed to the UI via SSE<br>3. Run completes successfully<br>4. Generated calibration file is returned to the browser as a download; nothing is stored server-side |
+| **UI reaction**   | Log lines appear in real time; on completion, the user is prompted to choose where on the filesystem to save the calibration file                            |
 
 ### 2.2. Edge cases
 #### **ID**: FR08_01-EC_01
