@@ -7,6 +7,7 @@ import { Library } from './pages/Library'
 import { BookDetail } from './pages/BookDetail'
 import { ClippingsFile } from './pages/ClippingsFile'
 import { Templates } from './pages/Templates'
+import { TemplateDetail } from './pages/TemplateDetail'
 import { Paths } from './pages/Paths'
 import { FullRun } from './pages/runs/FullRun'
 import { CalibrationRun } from './pages/runs/CalibrationRun'
@@ -28,6 +29,7 @@ function App() {
             <Route path="/library/:name" element={<BookDetail />} />
             <Route path="/clippings" element={<ClippingsFile />} />
             <Route path="/templates" element={<Templates />} />
+            <Route path="/templates/:name" element={<TemplateDetail />} />
             <Route path="/paths" element={<Paths />} />
           </Routes>
         </div>

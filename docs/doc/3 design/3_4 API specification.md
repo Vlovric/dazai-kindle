@@ -63,6 +63,13 @@
 
 - - -
 # templates
+
+> **Implementation note (24 - Template library):** `DELETE /templates` and
+> `GET /templates/export` take `names` as **repeated** query params
+> (`?names=foo&names=bar`), not a single comma-joined value - same fix as
+> `DELETE /runs` / `GET /runs/export` (see the "runs" section note below), since
+> a template's name is a user-chosen filename that can itself contain a comma.
+
 ## GET /templates
 
 | **Purpose:**          | Fetching a paginated, filtered and sorted list of templates           |
@@ -115,7 +122,7 @@
 | **Purpose:**          | Deleting one or more templates from the filesystem |
 | --------------------- | -------------------------------------------------- |
 | **Authentication:**   | `PUBLIC`                                           |
-| **Request payload:**  | `?names=foo,bar`                                   |
+| **Request payload:**  | `?names=foo&names=bar`                             |
 | **Response payload:** | —                                                  |
 
 ### Success response
@@ -137,7 +144,7 @@
 | **Purpose:**          | Downloading one or more templates; returns .zip if multiple |
 | --------------------- | ----------------------------------------------------------- |
 | **Authentication:**   | `PUBLIC`                                                    |
-| **Request payload:**  | `?names=foo,bar`                                            |
+| **Request payload:**  | `?names=foo&names=bar`                                      |
 | **Response payload:** | File or .zip download                                       |
 
 ### Success response
@@ -177,6 +184,18 @@
 
 - - -
 ## POST /templates/preview
+
+> **Implementation note (24 - Template library, second screen):** the request
+> doesn't say whether `content` is an output or a heading template, so the
+> example context exposes **both** view-models every render - `title`/`groups`
+> (what an output template references) and `title`/`headings` (what a heading
+> template references) - built from one fixed hardcoded example entry. A
+> template only ever reads the variables it cares about, so the unused ones
+> are harmless. Rendered with a `freemarker.cache.StringTemplateLoader`
+> (in-memory), reusing the same `TemplateGroup`/`TemplateClipping`/
+> `TemplateHeading` view-model classes core's `TemplateRenderer` already
+> builds from parsed clippings - this is the only place a template is rendered
+> from a content string rather than a file on disk.
 
 | **Purpose:**          | Rendering template content using example entries |
 | --------------------- | ------------------------------------------------ |
