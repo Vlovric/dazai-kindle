@@ -12,14 +12,28 @@ public record AppArgs(
     Path clippings,                    // --clippings      (required unless headingsOnly or printCalibrationTemplate)
     String titleFilter,                // --title          (optional, default "")
     Path template,                     // --template       (required unless headingsOnly or printCalibrationTemplate)
-    Path output,                       // --output         (optional, derived from title if absent)
+    Path output,                       // --output         (optional, derived from title+author if absent)
     boolean headingsOnly,              // --headings-only
     Path headingsTemplate,             // --headings-template (optional)
     boolean debug,                     // --debug
     Path calibrate,                    // --calibrate      (required unless printCalibrationTemplate)
     Path printCalibrationTemplate,     // --print-calibration-template
-    boolean overwriteFyodorTemplate    // --overwrite-fyodor-template
+    boolean overwriteFyodorTemplate,   // --overwrite-fyodor-template
+    Path outputDir                     // base directory for the title+author-derived filename when output is null (server use case); ignored by the CLI
 ) {
+    /**
+     * Preserves the CLI's original 11-arg construction (no outputDir) so existing
+     * callers don't need to know about the server-only outputDir concept.
+     */
+    public AppArgs(
+        Path book, Path clippings, String titleFilter, Path template, Path output,
+        boolean headingsOnly, Path headingsTemplate, boolean debug, Path calibrate,
+        Path printCalibrationTemplate, boolean overwriteFyodorTemplate
+    ) {
+        this(book, clippings, titleFilter, template, output, headingsOnly, headingsTemplate,
+            debug, calibrate, printCalibrationTemplate, overwriteFyodorTemplate, null);
+    }
+
     static AppArgs of(
         File book,
         File clippings,

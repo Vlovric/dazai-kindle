@@ -1,31 +1,21 @@
 package io.github.vlovric.dazaikindle.stats;
 
-import java.io.IOException;
-import java.io.UncheckedIOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.time.Instant;
+import java.util.Optional;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-
 import io.github.vlovric.dazaikindle.common.run.RunMetadata;
-import io.github.vlovric.dazaikindle.common.storage.StorageConfig;
+import io.github.vlovric.dazaikindle.common.run.RunRepository;
 import io.github.vlovric.dazaikindle.stats.dto.StatsResponse;
 
 @Service
 public class StatsService {
 
-    private static final Logger log = LoggerFactory.getLogger(StatsService.class);
+    private final RunRepository runRepository;
 
-    private final StorageConfig storageConfig;
-    private final ObjectMapper objectMapper = new ObjectMapper();
-
-    public StatsService(StorageConfig storageConfig) {
-        this.storageConfig = storageConfig;
+    public StatsService(RunRepository runRepository) {
+        this.runRepository = runRepository;
     }
 
     public StatsResponse getStats(){
@@ -37,52 +27,22 @@ public class StatsService {
     }
 
     private long getHighlightCount(){
-        try (var runDirs = Files.list(storageConfig.getLibraryPath())) {
-            return runDirs
-                .filter(Files::isDirectory)
-                .map(dir -> dir.resolve(storageConfig.getRunJsonFileName()))
-                .mapToLong(this::readHighlightCount)
-                .sum();
-        } catch (IOException e) {
-            throw new UncheckedIOException("Failed to sum highlight counts", e);
-        }
-    }
-
-    private long readHighlightCount(Path runMetadataFile) {
-        try {
-            return objectMapper.readValue(runMetadataFile.toFile(), RunMetadata.class).highlightCount();
-        } catch (IOException e) {
-            log.warn("Skipping unreadable run metadata file: {}", runMetadataFile.getFileName(), e);
-            return 0;
-        }
+        return runRepository.listRunDirs().stream()
+            .map(runRepository::readMetadata)
+            .flatMap(Optional::stream)
+            .mapToLong(RunMetadata::highlightCount)
+            .sum();
     }
 
     private int getEntryCount(){
-        try (var entries = Files.list(storageConfig.getLibraryPath())) {
-            return (int) entries.filter(Files::isDirectory).count();
-        } catch (IOException e) {
-            throw new UncheckedIOException("Failed to count library entries", e);
-        }
+        return runRepository.listAllDirectories().size();
     }
 
     private Instant getLastRunTime(){
-        try (var files = Files.walk(storageConfig.getLibraryPath())) {
-            return files
-                .filter(Files::isRegularFile)
-                .map(this::getLastModifiedTime)
-                .max(Instant::compareTo)
-                .orElse(null);
-        } catch (IOException e) {
-            throw new UncheckedIOException("Failed to determine last run time", e);
-        }
-    }
-
-    private Instant getLastModifiedTime(Path path) {
-        try {
-            return Files.getLastModifiedTime(path).toInstant();
-        } catch (IOException e) {
-            throw new UncheckedIOException("Failed to read last modified time for " + path, e);
-        }
+        return runRepository.listAllArtifactPaths().stream()
+            .map(runRepository::lastModified)
+            .max(Instant::compareTo)
+            .orElse(null);
     }
 
 }

@@ -1,11 +1,11 @@
 package io.github.vlovric.dazaikindle.paths;
 
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 
 import org.springframework.stereotype.Service;
 
+import io.github.vlovric.dazaikindle.common.storage.FilesystemProbe;
 import io.github.vlovric.dazaikindle.common.storage.StorageConfig;
 import io.github.vlovric.dazaikindle.paths.dto.FolderResponse;
 import io.github.vlovric.dazaikindle.paths.exceptions.InvalidPathException;
@@ -15,9 +15,11 @@ import io.github.vlovric.dazaikindle.paths.exceptions.PathNameNotFoundException;
 public class PathsService {
 
     private final StorageConfig storageConfig;
+    private final FilesystemProbe filesystemProbe;
 
-    public PathsService(StorageConfig storageConfig) {
+    public PathsService(StorageConfig storageConfig, FilesystemProbe filesystemProbe) {
         this.storageConfig = storageConfig;
+        this.filesystemProbe = filesystemProbe;
     }
 
     public List<FolderResponse> getPaths() {
@@ -33,7 +35,7 @@ public class PathsService {
         }
 
         Path newPath = Path.of(path);
-        if (!Files.isDirectory(newPath)) {
+        if (!filesystemProbe.isDirectory(newPath)) {
             throw new InvalidPathException(path);
         }
 

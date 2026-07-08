@@ -2,9 +2,6 @@
 # Working on
 
 # 1.1. High prio
-- [ ] [[25 - Full run]]
-- [ ] [[26 - Calibration run]]
-- [ ] [[27 - Headings run]]
 # 1.2. Medium prio
 - [ ] [[23 - Book library]]
 - [ ] [[24 - Template library]]

@@ -1,14 +1,16 @@
+import { useNavigate } from "react-router-dom"
 import { useStats } from "../hooks/useStats"
 import { StatsBar } from "../components/StatsBar"
 import { RunCard } from "../components/RunCard"
 
 const RUN_TYPES = [
-    { title: "Full Run", explanation: "Parse clippings and render output using a template." },
-    { title: "Generate Calibration File", explanation: "Fit Kindle locations to byte offsets from a book." },
-    { title: "Headings Only", explanation: "Render headings without processing clippings." },
+    { title: "Full Run", explanation: "Parse clippings and render output using a template.", path: "/new-run/full" },
+    { title: "Generate Calibration File", explanation: "Fit Kindle locations to byte offsets from a book.", path: "/new-run/calibration" },
+    { title: "Headings Only", explanation: "Render headings without processing clippings.", path: "/new-run/headings" },
 ]
 
 export function Dashboard() {
+    const navigate = useNavigate()
     const { data: stats, loading, error } = useStats()
 
     return (
@@ -20,7 +22,12 @@ export function Dashboard() {
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-lg">
                     {RUN_TYPES.map((run) => (
-                        <RunCard key={run.title} {...run} onClick={() => {/* navigate to run screen */ }} />
+                        <RunCard
+                            key={run.title}
+                            title={run.title}
+                            explanation={run.explanation}
+                            onClick={() => { if (run.path) navigate(run.path) }}
+                        />
                     ))}
                 </div>
             </section>

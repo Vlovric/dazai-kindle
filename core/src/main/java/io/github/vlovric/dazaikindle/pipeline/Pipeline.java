@@ -28,9 +28,19 @@ import io.github.vlovric.dazaikindle.pipeline.steps.ResolveHeadingsStep;
 public class Pipeline {
 
     private final AppArgs args;
+    private final Path debugRunDir;
 
     public Pipeline(AppArgs args) {
+        this(args, null);
+    }
+
+    /**
+     * @param debugRunDir directory to write debug artifacts into when args.debug() is set;
+     *                     if null, falls back to a CWD-relative ./debug-runs/run-&lt;timestamp&gt; directory (CLI default)
+     */
+    public Pipeline(AppArgs args, Path debugRunDir) {
         this.args = args;
+        this.debugRunDir = debugRunDir;
     }
 
     /**
@@ -63,8 +73,15 @@ public class Pipeline {
             long highlightCount = context.clippings == null ? 0
                     : context.clippings.stream().filter(Clipping::isHighlight).count();
 
+            // matchedBookTitle is only set once ParseClippingsStep runs, so it's
+            // never populated for a --headings-only (or --print-calibration-template)
+            // exit; fall back to the book's own EPUB metadata title in that case.
+            String bookTitle = (context.matchedBookTitle != null && !context.matchedBookTitle.isBlank())
+                ? context.matchedBookTitle
+                : context.epubTitle;
+
             return new PipelineResult(
-                context.matchedBookTitle,
+                bookTitle,
                 context.epubAuthor,
                 highlightCount
             );
@@ -79,8 +96,11 @@ public class Pipeline {
     private PipelineContext buildContext() throws Exception {
         DebugArtifacts debug = null;
         if (args.debug()) {
-            String ts = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMdd-HHmmss"));
-            Path runDir = Paths.get("./debug-runs", "run-" + ts);
+            Path runDir = debugRunDir;
+            if (runDir == null) {
+                String ts = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMdd-HHmmss"));
+                runDir = Paths.get("./debug-runs", "run-" + ts);
+            }
             Files.createDirectories(runDir);
             debug = new DebugArtifacts(runDir);
             System.out.println("[DazaiKindle] 🧪 Debug run dir: " + runDir.toAbsolutePath());
