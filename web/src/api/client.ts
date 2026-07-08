@@ -37,9 +37,26 @@ export async function apiPost<T>(path: string, body: unknown): Promise<T>{
     return response.json()
 }
 
+export async function apiDelete(path: string): Promise<void>{
+    const response = await fetch(`${BASE_URL}${path}`, { method: 'DELETE' });
+    if(!response.ok){
+        await throwApiError(response, `DELETE ${path} failed: ${response.status} ${response.statusText}`);
+    }
+}
+
 function filenameFromContentDisposition(header: string | null, fallback: string): string {
     const match = header?.match(/filename="?([^"]+)"?/)
     return match ? match[1] : fallback
+}
+
+export async function apiGetBlob(path: string, fallbackFilename: string): Promise<{ blob: Blob, filename: string }>{
+    const response = await fetch(`${BASE_URL}${path}`);
+    if(!response.ok){
+        await throwApiError(response, `GET ${path} failed: ${response.status} ${response.statusText}`);
+    }
+    const blob = await response.blob()
+    const filename = filenameFromContentDisposition(response.headers.get('Content-Disposition'), fallbackFilename)
+    return { blob, filename }
 }
 
 export async function apiPostBlob(path: string, body: unknown, fallbackFilename: string): Promise<{ blob: Blob, filename: string }>{

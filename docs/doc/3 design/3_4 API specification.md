@@ -199,6 +199,14 @@
 
 - - -
 # runs
+
+> **Implementation note (23 - Book library):** `DELETE /runs` and `GET /runs/export`
+> take `names` as **repeated** query params (`?names=Dazai&names=Kafka`), not a single
+> comma-joined value. A run's name is a book title, which can itself contain a comma
+> (e.g. "80,000 Hours") - comma-joining would make that indistinguishable from the
+> delimiter. `?names=book,calibration`-style params elsewhere (artifact base names on
+> `/runs/{name}/*`) are unaffected, since those values are a fixed, comma-free set.
+
 ## GET /runs
 
 | **Purpose:**          | Fetching a paginated, sorted and searchable list of past runs                        |
@@ -226,7 +234,7 @@
 | **Purpose:**          | Deleting one or more runs and all their artifacts from the filesystem |
 | --------------------- | --------------------------------------------------------------------- |
 | **Authentication:**   | `PUBLIC`                                                              |
-| **Request payload:**  | `?names=Dazai,Kafka`                                                  |
+| **Request payload:**  | `?names=Dazai&names=Kafka`                                            |
 | **Response payload:** | —                                                                     |
 
 ### Success response
@@ -248,7 +256,7 @@
 | **Purpose:**          | Downloading one or more runs as a .zip            |
 | --------------------- | ------------------------------------------------- |
 | **Authentication:**   | `PUBLIC`                                          |
-| **Request payload:**  | `?names=Dazai,Kafka`                              |
+| **Request payload:**  | `?names=Dazai&names=Kafka`                        |
 | **Response payload:** | .zip file download                                |
 
 ### Success response
