@@ -2,7 +2,9 @@ package io.github.vlovric.dazaikindle.common.clippings;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
+import java.time.Instant;
 
 import org.springframework.stereotype.Repository;
 import org.springframework.web.multipart.MultipartFile;
@@ -32,5 +34,17 @@ public class ClippingsRepository {
 
     public Path path() {
         return storageConfig.getClippingsFile();
+    }
+
+    public boolean exists() {
+        return Files.isRegularFile(path());
+    }
+
+    public Instant lastModified() {
+        try {
+            return Files.getLastModifiedTime(path()).toInstant();
+        } catch (IOException e) {
+            throw new UncheckedIOException("Failed to read clippings last modified time", e);
+        }
     }
 }

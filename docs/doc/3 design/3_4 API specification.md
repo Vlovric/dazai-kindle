@@ -419,6 +419,38 @@
 | **Code:**     | 404                            |
 | **Data:**     | —                              |
 
+- - -
+## POST /clippings/open
+
+> **Implementation note (22 - Clippings library):** not in the original design -
+> added for the same reason as `POST /runs/{name}/artifacts/{artifact}/open` (see
+> that endpoint's note): the browser can't reach the local filesystem, so the
+> server opens the clippings file's **containing folder** in the OS's native file
+> browser via `java.awt.Desktop`, rather than the file itself.
+
+| **Purpose:**          | Opening the clippings file's containing folder in the OS filesystem |
+| --------------------- | --------------------------------------------------------------------- |
+| **Authentication:**   | `PUBLIC`                                                              |
+| **Request payload:**  | —                                                                     |
+| **Response payload:** | —                                                                     |
+
+### Success response
+
+| **Code:** | 204 |
+| --------- | --- |
+| **Data:** | —   |
+
+### Error response
+
+| **Scenario:** | No clippings file uploaded yet |
+| ------------- | ------------------------------- |
+| **Code:**     | 404                              |
+| **Data:**     | —                                |
+
+| **Scenario:** | No desktop environment available, or the OS refused to open it |
+| ------------- | ---------------------------------------------------------------- |
+| **Code:**     | 500                                                               |
+| **Data:**     | Error message                                                     |
 
 - - -
 # files

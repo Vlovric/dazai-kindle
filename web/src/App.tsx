@@ -5,6 +5,7 @@ import { TopBarProvider } from './context/TopBarContext'
 import { Dashboard } from './pages/Dashboard'
 import { Library } from './pages/Library'
 import { BookDetail } from './pages/BookDetail'
+import { ClippingsFile } from './pages/ClippingsFile'
 import { Templates } from './pages/Templates'
 import { Paths } from './pages/Paths'
 import { FullRun } from './pages/runs/FullRun'
@@ -25,6 +26,7 @@ function App() {
             <Route path="/new-run/headings" element={<HeadingsRun />} />
             <Route path="/library" element={<Library />} />
             <Route path="/library/:name" element={<BookDetail />} />
+            <Route path="/clippings" element={<ClippingsFile />} />
             <Route path="/templates" element={<Templates />} />
             <Route path="/paths" element={<Paths />} />
           </Routes>

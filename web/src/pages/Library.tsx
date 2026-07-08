@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react"
+import { Link } from "react-router-dom"
 import { useTopBarActions } from "../hooks/useTopBarActions"
 import { deleteRuns, exportRuns, listRuns } from "../api/runs"
 import type { RunSortField, RunSummary, SortOrder } from "../dto/runs"
@@ -108,9 +109,12 @@ export function Library() {
                 placeholder="Search"
                 className="bg-surface-container-lowest border border-outline-variant rounded-lg px-md py-sm text-body-md font-body text-on-surface placeholder:text-secondary focus:outline-none focus:border-primary w-64 mr-auto"
             />
-            <button className="bg-surface-container-lowest border border-outline-variant rounded-lg px-md py-sm text-label-md font-body text-primary hover:border-primary transition-colors">
+            <Link
+                to="/clippings"
+                className="bg-surface-container-lowest border border-outline-variant rounded-lg px-md py-sm text-label-md font-body text-primary hover:border-primary transition-colors"
+            >
                 View clippings file
-            </button>
+            </Link>
         </>
     ), [searchQuery])
 
