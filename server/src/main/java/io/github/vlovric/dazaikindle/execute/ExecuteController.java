@@ -14,6 +14,7 @@ import io.github.vlovric.dazaikindle.execute.dto.CalibrationFileDownload;
 import io.github.vlovric.dazaikindle.execute.dto.CalibrationRunRequest;
 import io.github.vlovric.dazaikindle.execute.dto.ExecuteResponse;
 import io.github.vlovric.dazaikindle.execute.dto.FullRunRequest;
+import io.github.vlovric.dazaikindle.execute.dto.HeadingsRunRequest;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -50,6 +51,16 @@ public class ExecuteController {
             .header(HttpHeaders.CONTENT_DISPOSITION,
                 ContentDisposition.attachment().filename(download.filename()).build().toString())
             .body(download.content());
+    }
+
+    @Operation(summary = "Start a headings-only run")
+    @ApiResponse(responseCode = "202", description = "Run started")
+    @ApiResponse(responseCode = "400", description = "Missing required fields")
+    @ApiResponse(responseCode = "404", description = "File reference not found")
+    @PostMapping("/api/execute/headings")
+    @ResponseStatus(HttpStatus.ACCEPTED)
+    public ExecuteResponse executeHeadingsRun(@RequestBody HeadingsRunRequest request){
+        return executeService.executeHeadingsRun(request);
     }
 
     //@GetMapping("/api/execute/{runId}/logs")

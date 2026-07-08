@@ -50,13 +50,22 @@ public class DraftRunService {
     }
 
     /**
-     * Sanitizes title, deletes any existing run folder for that title
-     * (overwrite semantics), and renames the draft folder to it.
+     * Sanitizes title, merges over any artifacts from an existing run folder
+     * for that title that the draft doesn't already have of its own (e.g. a
+     * headings output or debug/ dir from a prior run on the same book),
+     * deletes that existing folder, and renames the draft folder to it.
      */
     public Path finalize(Path draftDir, String title, StorageConfig storageConfig) {
         Path target = storageConfig.getLibraryPath().resolve(sanitizeTitle(title));
+        if (target.equals(draftDir)) {
+            // The sanitized title happens to equal the draft's own current
+            // folder name (e.g. a caller fell back to the raw draftId) -
+            // there's nothing to merge/move, the draft already *is* the target.
+            return draftDir;
+        }
         try {
             if (Files.exists(target)) {
+                mergeMissingInto(target, draftDir);
                 deleteRecursively(target);
             }
             Files.move(draftDir, target, StandardCopyOption.ATOMIC_MOVE);
@@ -64,6 +73,43 @@ public class DraftRunService {
             throw new UncheckedIOException("Failed to finalize run folder for '" + title + "'", e);
         }
         return target;
+    }
+
+    /**
+     * Copies every entry directly under source into draftDir, skipping any
+     * entry whose name already exists there - so a freshly uploaded/copied
+     * artifact (book.epub, calibration.txt, a just-written run.json/output)
+     * is never clobbered by the run being overwritten, while anything the
+     * new run doesn't produce itself (an old headingsOutput.md, debug/) is
+     * carried forward instead of being lost.
+     */
+    private void mergeMissingInto(Path source, Path draftDir) throws IOException {
+        try (var entries = Files.list(source)) {
+            for (Path entry : (Iterable<Path>) entries::iterator) {
+                Path target = draftDir.resolve(entry.getFileName());
+                if (Files.exists(target)) {
+                    continue;
+                }
+                if (Files.isDirectory(entry)) {
+                    copyRecursively(entry, target);
+                } else {
+                    Files.copy(entry, target, StandardCopyOption.COPY_ATTRIBUTES);
+                }
+            }
+        }
+    }
+
+    private void copyRecursively(Path source, Path target) throws IOException {
+        try (var paths = Files.walk(source)) {
+            for (Path path : (Iterable<Path>) paths::iterator) {
+                Path relativeTarget = target.resolve(source.relativize(path));
+                if (Files.isDirectory(path)) {
+                    Files.createDirectories(relativeTarget);
+                } else {
+                    Files.copy(path, relativeTarget, StandardCopyOption.COPY_ATTRIBUTES);
+                }
+            }
+        }
     }
 
     /**

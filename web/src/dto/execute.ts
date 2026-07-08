@@ -16,3 +16,10 @@ export interface CalibrationRunRequest {
     bookRef: string
     debugMode: boolean
 }
+
+export interface HeadingsRunRequest {
+    bookRef: string
+    calibrationRef: string
+    headingsTemplateRef: string
+    debugMode: boolean
+}

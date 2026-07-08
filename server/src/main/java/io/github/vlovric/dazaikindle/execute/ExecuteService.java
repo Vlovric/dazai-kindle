@@ -21,6 +21,7 @@ import io.github.vlovric.dazaikindle.execute.dto.CalibrationFileDownload;
 import io.github.vlovric.dazaikindle.execute.dto.CalibrationRunRequest;
 import io.github.vlovric.dazaikindle.execute.dto.ExecuteResponse;
 import io.github.vlovric.dazaikindle.execute.dto.FullRunRequest;
+import io.github.vlovric.dazaikindle.execute.dto.HeadingsRunRequest;
 import io.github.vlovric.dazaikindle.execute.exceptions.MissingRequiredFieldException;
 import io.github.vlovric.dazaikindle.execute.exceptions.PipelineExecutionException;
 import io.github.vlovric.dazaikindle.files.FilesService;
@@ -95,6 +96,65 @@ public class ExecuteService {
         String title = (result.bookTitle() != null && !result.bookTitle().isBlank())
             ? result.bookTitle()
             : request.title();
+        draftRunService.finalize(draft, title, storageConfig);
+
+        return new ExecuteResponse(runId);
+    }
+
+    /**
+     * Synchronous, same as executeFullRun. Unlike a full run, no clippings/
+     * output template are involved and PipelineResult.highlightCount() is
+     * always 0 (HeadingsOnlyStep exits the pipeline before clippings are
+     * parsed) - run.json still gets written so the run shows up in the
+     * library like any other. finalize()'s merge means artifacts from a
+     * prior full/headings run on the same book (e.g. an existing output.md
+     * or debug/ dir) are preserved alongside the fresh headingsOutput.
+     */
+    public ExecuteResponse executeHeadingsRun(HeadingsRunRequest request) {
+        requireNonBlank(request.bookRef(), "bookRef");
+        requireNonBlank(request.calibrationRef(), "calibrationRef");
+        requireNonBlank(request.headingsTemplateRef(), "headingsTemplateRef");
+
+        Path draft = draftFolderAmong(request.bookRef(), request.calibrationRef())
+            .orElseGet(() -> draftRunService.newDraft(storageConfig));
+        String runId = draft.getFileName().toString();
+
+        Path book = resolveIntoDraft(FileType.BOOK, request.bookRef(), draft);
+        Path calibration = resolveIntoDraft(FileType.CALIBRATION, request.calibrationRef(), draft);
+        Path headingsTemplate = requireArtifact(FileType.HEADING_TEMPLATE, request.headingsTemplateRef());
+
+        AppArgs args = new AppArgs(
+            book,
+            null,
+            "",
+            null,
+            null,
+            true,
+            headingsTemplate,
+            request.debugMode(),
+            calibration,
+            null,
+            false,
+            draft // outputDir: write the derived "title_headings.md" inside this run's folder
+        );
+
+        PipelineResult result;
+        try {
+            result = request.debugMode()
+                ? new Pipeline(args, draft.resolve(RunArtifacts.DEBUG_DIR)).run()
+                : new Pipeline(args).run();
+        } catch (Exception e) {
+            throw new PipelineExecutionException(e);
+        }
+
+        writeRunMetadata(draft, result);
+
+        // Never fall back to the bare runId: it's the draft folder's own
+        // current name, so resolving it as a title would make finalize()'s
+        // target the same path as the draft it's finalizing.
+        String title = (result.bookTitle() != null && !result.bookTitle().isBlank())
+            ? result.bookTitle()
+            : "Untitled_" + runId;
         draftRunService.finalize(draft, title, storageConfig);
 
         return new ExecuteResponse(runId);

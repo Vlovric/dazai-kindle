@@ -6,12 +6,21 @@ The user can choose the run type through the dashboard UI
 ## Mandatory prerequisites for all cases
 - All pipeline execution screens must stream server log messages to the UI and show errors to the user distinctly
 
-> **Implementation note (25 - Full run, 26 - Calibration run):** the backend for
-> `/execute/full` (FR08_03) and `/execute/generate` (FR08_01) is implemented so far,
-> and both run **synchronously** — the HTTP request blocks until the run finishes,
-> and there is no SSE log streaming yet (`GET /execute/{runId}/logs` is an
-> unimplemented stub). Live log streaming remains the target design; it just hasn't
-> been built yet. FR08_02 has no backend implementation at all yet.
+> **Implementation note (25 - Full run, 26 - Calibration run, 27 - Headings run):** the
+> backend for `/execute/full` (FR08_03), `/execute/generate` (FR08_01), and
+> `/execute/headings` (FR08_02) is implemented so far, and all three run
+> **synchronously** — the HTTP request blocks until the run finishes, and there is
+> no SSE log streaming yet (`GET /execute/{runId}/logs` is an unimplemented stub).
+> Live log streaming remains the target design; it just hasn't been built yet.
+>
+> Like FR08_03, FR08_02 produces a library run folder (via the same finalize step),
+> not a download - it's the calibration generation run (FR08_01) that's the
+> exception. `DraftRunService.finalize()` now also merges over any artifact from an
+> existing same-titled run folder that the new draft doesn't already have of its own
+> (e.g. a full run on a book previously used for a headings-only run keeps that run's
+> headings output, and vice versa), so switching between run types on the same book
+> doesn't lose prior artifacts - only an artifact the new draft actually replaces
+> (a freshly uploaded book, this run's own output) is skipped during the merge.
 >
 > Unlike FR08_03, FR08_01 doesn't produce a library entry at all: `/execute/generate`
 > responds with the generated `calibration.txt` itself (`Content-Disposition:

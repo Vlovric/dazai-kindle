@@ -72,13 +72,17 @@ public class HeadingsOnlyStep implements PipelineStep {
         return tmp;
     }
 
-    /** Strips characters illegal in filenames on Windows/macOS/Linux so the path is safe on all platforms. */
+    /**
+     * Strips characters illegal in filenames on Windows/macOS/Linux so the path is safe on all
+     * platforms. Resolves against outputDir when present (server use case), same as RenderOutputStep.
+     */
     private static Path resolveOutputPath(AppArgs args, String title) {
         if (args.output() != null) {
             return args.output();
         }
         String baseName = title.replaceAll("[\\\\/:*?\"<>|]", "_");
-        return Path.of(baseName + "_headings.md");
+        Path fileName = Path.of(baseName + "_headings.md");
+        return args.outputDir() != null ? args.outputDir().resolve(fileName) : fileName;
     }
 
     private static String deriveTitle(PipelineContext ctx) {

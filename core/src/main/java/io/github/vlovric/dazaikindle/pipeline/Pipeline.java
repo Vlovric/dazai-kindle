@@ -73,8 +73,15 @@ public class Pipeline {
             long highlightCount = context.clippings == null ? 0
                     : context.clippings.stream().filter(Clipping::isHighlight).count();
 
+            // matchedBookTitle is only set once ParseClippingsStep runs, so it's
+            // never populated for a --headings-only (or --print-calibration-template)
+            // exit; fall back to the book's own EPUB metadata title in that case.
+            String bookTitle = (context.matchedBookTitle != null && !context.matchedBookTitle.isBlank())
+                ? context.matchedBookTitle
+                : context.epubTitle;
+
             return new PipelineResult(
-                context.matchedBookTitle,
+                bookTitle,
                 context.epubAuthor,
                 highlightCount
             );

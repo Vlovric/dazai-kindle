@@ -547,13 +547,14 @@
 - - -
 # execute
 
-> **Implementation note (25 - Full run):** only `POST /execute/full` is implemented
-> so far; `/execute/generate` and `/execute/headings` below are still unimplemented
-> stubs in the spec. Full run execution currently runs **synchronously** — the
-> request blocks until the pipeline finishes, then returns 202 with the result.
-> `GET /execute/{runId}/logs` (SSE log streaming) is not implemented yet; the
-> `runId` in the response is already forward-compatible with it though (see below),
-> so wiring up async execution + SSE later shouldn't need another contract change.
+> **Implementation note (25 - Full run, 26 - Calibration run, 27 - Headings run):**
+> `POST /execute/full`, `POST /execute/generate`, and `POST /execute/headings` are
+> all implemented, and all three run **synchronously** — the request blocks until
+> the pipeline finishes, then returns its result directly (202 + `{ runId }` for
+> full/headings, 200 + file download for generate). `GET /execute/{runId}/logs`
+> (SSE log streaming) is not implemented yet; the `runId` in the full/headings
+> response is already forward-compatible with it though (see below), so wiring up
+> async execution + SSE later shouldn't need another contract change.
 
 ## POST /execute/full
 
@@ -642,7 +643,30 @@
 - - -
 ## POST /execute/headings
 
-> **Not yet implemented.**
+> **Implementation note (27 - Headings run):** runs synchronously like
+> `/execute/full`, and finalizes into a library run folder the same way (no
+> download semantics, unlike `/execute/generate`). `bookRef`/`calibrationRef`
+> resolve exactly as in `POST /execute/full`; `headingsTemplateRef` resolves
+> like `templateRef` does there (a filename in the Templates storage path).
+> `PipelineResult.highlightCount()` is always 0, since `HeadingsOnlyStep` exits
+> the pipeline before clippings are ever parsed - `run.json` is still written
+> so the run appears in the library like any other.
+>
+> `DraftRunService.finalize()` was extended (for this issue, also benefiting
+> `/execute/full`) to merge any artifact from an existing same-titled run
+> folder that the new draft doesn't already have of its own - e.g. running a
+> full run on a book previously used for a headings-only run keeps that run's
+> `*_headings.md` (and vice versa), while an artifact the new draft already
+> produced/copied (a freshly uploaded book, this run's own output) is never
+> overwritten by the old one.
+>
+> If the book's EPUB has no usable title (no `matchedBookTitle` from clippings
+> matching - always the case here - and no `epubTitle` metadata either), the run
+> folder falls back to `Untitled_<runId>` rather than the bare `runId`: the
+> latter is the draft folder's own current name, so resolving it as the target
+> title would make `finalize()` try to move the draft onto itself.
+> `finalize()` itself now also guards against target-equals-draft as a
+> second line of defense, returning the draft unchanged instead of corrupting it.
 
 | **Purpose:**          | Starting a headings-only parsing run                                  |
 | --------------------- | --------------------------------------------------------------------- |
