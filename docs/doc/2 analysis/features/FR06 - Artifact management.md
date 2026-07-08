@@ -1,27 +1,16 @@
 # 1. Overview & Context
 The user should be able to upload artifacts needed to run the tool, and should be able to see stored past artifacts
-
-> **Implementation note (25 - Full run):** artifacts are never stored as a separate
-> flat file pool. Book/calibration/template/headingsTemplate uploads land inside a
-> **draft run folder** (identified by an opaque `draftId` minted on first upload and
-> reused for later uploads in the same session); clippings is the one exception —
-> a single fixed file, always overwritten, not scoped to any run. "Stored past
-> artifacts" (FR06_02) means reusing an artifact from an existing **completed** run
-> in the library (see FR07), not a separately browsable upload history. A draft that
-> never reaches a successful run is deleted by a scheduled cleanup sweep once it's
-> past a TTL — there's no explicit "delete this upload" action, since nothing is
-> ever left outside a run folder to begin with.
 - - -
 # 2. Features
 - - -
 ## FR06_01 - Uploading artifacts
 
-| ID            | FR06_01                                                                                                    |
-| ------------- | ---------------------------------------------------------------------------------------------------------- |
-| Requirement   | Uploading artifacts through the UI                                                                         |
-| Explanation   | The user can upload all artifacts needed to run the tool, aka parameters and flags that the tool supports. |
-| Priority      |                                                                                                            |
-| FR dependency |                                                                                                            |
+| ID            | FR06_01                                                                                                                                                                                                                                                                                                                          |
+| ------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Requirement   | Uploading artifacts through the UI                                                                                                                                                                                                                                                                                              |
+| Explanation   | The user can upload all artifacts needed to run the tool, aka parameters and flags that the tool supports. Artifacts are never stored as a separate flat file pool: book/calibration/template/headingsTemplate uploads land inside a **draft run folder** (identified by an opaque `draftId` minted on first upload and reused for later uploads in the same session); clippings is the one exception — a single fixed file, always overwritten, not scoped to any run. |
+| Priority      |                                                                                                                                                                                                                                                                                                                                   |
+| FR dependency |                                                                                                                                                                                                                                                                                                                                   |
 ### 2.1. Happy path
 #### FR06_01-HP_01
 
@@ -45,12 +34,13 @@ The user should be able to upload artifacts needed to run the tool, and should b
 	**Given** the user chose a file to upload
 	**When** a file with the same name already exists in the storage location
 	**Then** the existing file is silently overwritten
-
-> **Implementation note:** overwriting is keyed by artifact *type* within the
-> current draft/target, not by matching filename — e.g. uploading a second book
-> file into the same draft replaces whatever book artifact was already there
-> (regardless of original filename), and uploading clippings always replaces the
-> one fixed clippings file.
+	**And** overwriting is keyed by artifact *type* within the current draft/target, not by matching filename — e.g. uploading a second book file into the same draft replaces whatever book artifact was already there (regardless of original filename), and uploading clippings always replaces the one fixed clippings file
+#### **ID**: FR06_01-EC_03
+**Scenario**: Draft never finalized
+	**Given** a draft run folder was created for an upload
+	**When** that draft never reaches a successful run
+	**Then** it is deleted by a scheduled cleanup sweep once it's past a TTL
+	**And** there is no explicit "delete this upload" action, since nothing is ever left outside a run folder to begin with
 ### 2.3. Entities involved
 - [[2_1 Data Dictionary#Uploaded artifacts]]
 - ... 
