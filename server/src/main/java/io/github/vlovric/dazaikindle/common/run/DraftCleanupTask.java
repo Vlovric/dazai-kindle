@@ -1,7 +1,5 @@
 package io.github.vlovric.dazaikindle.common.run;
 
-import java.io.IOException;
-import java.nio.file.Files;
 import java.time.Duration;
 import java.time.Instant;
 import java.nio.file.Path;
@@ -10,8 +8,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
-
-import io.github.vlovric.dazaikindle.common.storage.StorageConfig;
 
 import jakarta.annotation.PostConstruct;
 
@@ -26,10 +22,10 @@ public class DraftCleanupTask {
     private static final Logger log = LoggerFactory.getLogger(DraftCleanupTask.class);
     private static final Duration DRAFT_TTL = Duration.ofHours(24);
 
-    private final StorageConfig storageConfig;
+    private final RunRepository runRepository;
 
-    public DraftCleanupTask(StorageConfig storageConfig) {
-        this.storageConfig = storageConfig;
+    public DraftCleanupTask(RunRepository runRepository) {
+        this.runRepository = runRepository;
     }
 
     @PostConstruct
@@ -43,20 +39,20 @@ public class DraftCleanupTask {
     }
 
     private void sweep() {
-        try (var dirs = Files.list(storageConfig.getLibraryPath())) {
-            dirs.filter(DraftRunService::looksLikeDraft)
+        try {
+            runRepository.listDraftDirs().stream()
                 .filter(this::isStale)
                 .forEach(this::deleteQuietly);
-        } catch (IOException e) {
+        } catch (RuntimeException e) {
             log.warn("Draft cleanup sweep failed", e);
         }
     }
 
     private boolean isStale(Path dir) {
         try {
-            Instant modified = Files.getLastModifiedTime(dir).toInstant();
+            Instant modified = runRepository.lastModified(dir);
             return modified.isBefore(Instant.now().minus(DRAFT_TTL));
-        } catch (IOException e) {
+        } catch (RuntimeException e) {
             log.warn("Failed to read last modified time for {}, skipping", dir, e);
             return false;
         }
@@ -64,7 +60,7 @@ public class DraftCleanupTask {
 
     private void deleteQuietly(Path dir) {
         try {
-            DraftRunService.deleteRecursively(dir);
+            runRepository.deleteRecursively(dir);
             log.info("Deleted abandoned draft run folder: {}", dir.getFileName());
         } catch (RuntimeException e) {
             log.warn("Failed to delete abandoned draft folder {}", dir, e);

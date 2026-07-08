@@ -1,22 +1,15 @@
 package io.github.vlovric.dazaikindle.execute;
 
-import java.io.IOException;
-import java.io.UncheckedIOException;
-import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.StandardCopyOption;
 import java.util.Optional;
 import java.util.stream.Stream;
 
 import org.springframework.stereotype.Service;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-
 import io.github.vlovric.dazaikindle.AppArgs;
-import io.github.vlovric.dazaikindle.common.run.DraftRunService;
-import io.github.vlovric.dazaikindle.common.run.RunArtifacts;
+import io.github.vlovric.dazaikindle.common.clippings.ClippingsRepository;
 import io.github.vlovric.dazaikindle.common.run.RunMetadata;
-import io.github.vlovric.dazaikindle.common.storage.StorageConfig;
+import io.github.vlovric.dazaikindle.common.run.RunRepository;
 import io.github.vlovric.dazaikindle.execute.dto.CalibrationFileDownload;
 import io.github.vlovric.dazaikindle.execute.dto.CalibrationRunRequest;
 import io.github.vlovric.dazaikindle.execute.dto.ExecuteResponse;
@@ -33,14 +26,14 @@ import io.github.vlovric.dazaikindle.pipeline.PipelineResult;
 @Service
 public class ExecuteService {
 
-    private final StorageConfig storageConfig;
-    private final DraftRunService draftRunService;
+    private final RunRepository runRepository;
+    private final ClippingsRepository clippingsRepository;
     private final FilesService filesService;
-    private final ObjectMapper objectMapper = new ObjectMapper();
 
-    public ExecuteService(StorageConfig storageConfig, DraftRunService draftRunService, FilesService filesService) {
-        this.storageConfig = storageConfig;
-        this.draftRunService = draftRunService;
+    public ExecuteService(RunRepository runRepository, ClippingsRepository clippingsRepository,
+                           FilesService filesService) {
+        this.runRepository = runRepository;
+        this.clippingsRepository = clippingsRepository;
         this.filesService = filesService;
     }
 
@@ -57,7 +50,7 @@ public class ExecuteService {
         requireNonBlank(request.clippingsRef(), "clippingsRef");
         requireNonBlank(request.templateRef(), "templateRef");
 
-        Path draft = draftFolderAmong(request).orElseGet(() -> draftRunService.newDraft(storageConfig));
+        Path draft = draftFolderAmong(request).orElseGet(runRepository::createDraft);
         String runId = draft.getFileName().toString();
 
         Path book = resolveIntoDraft(FileType.BOOK, request.bookRef(), draft);
@@ -65,7 +58,7 @@ public class ExecuteService {
         // Templates live flatly in the Templates storage path, not per-run -
         // they're never touched by finalize()'s delete-then-move, so no copy needed.
         Path template = requireArtifact(FileType.TEMPLATE, request.templateRef());
-        Path clippings = storageConfig.getClippingsFile();
+        Path clippings = clippingsRepository.path();
 
         AppArgs args = new AppArgs(
             book,
@@ -85,7 +78,7 @@ public class ExecuteService {
         PipelineResult result;
         try {
             result = request.debugMode()
-                ? new Pipeline(args, draft.resolve(RunArtifacts.DEBUG_DIR)).run()
+                ? new Pipeline(args, draft.resolve(RunRepository.DEBUG_DIR)).run()
                 : new Pipeline(args).run();
         } catch (Exception e) {
             throw new PipelineExecutionException(e);
@@ -96,7 +89,7 @@ public class ExecuteService {
         String title = (result.bookTitle() != null && !result.bookTitle().isBlank())
             ? result.bookTitle()
             : request.title();
-        draftRunService.finalize(draft, title, storageConfig);
+        runRepository.finalize(draft, title);
 
         return new ExecuteResponse(runId);
     }
@@ -116,7 +109,7 @@ public class ExecuteService {
         requireNonBlank(request.headingsTemplateRef(), "headingsTemplateRef");
 
         Path draft = draftFolderAmong(request.bookRef(), request.calibrationRef())
-            .orElseGet(() -> draftRunService.newDraft(storageConfig));
+            .orElseGet(runRepository::createDraft);
         String runId = draft.getFileName().toString();
 
         Path book = resolveIntoDraft(FileType.BOOK, request.bookRef(), draft);
@@ -141,7 +134,7 @@ public class ExecuteService {
         PipelineResult result;
         try {
             result = request.debugMode()
-                ? new Pipeline(args, draft.resolve(RunArtifacts.DEBUG_DIR)).run()
+                ? new Pipeline(args, draft.resolve(RunRepository.DEBUG_DIR)).run()
                 : new Pipeline(args).run();
         } catch (Exception e) {
             throw new PipelineExecutionException(e);
@@ -155,7 +148,7 @@ public class ExecuteService {
         String title = (result.bookTitle() != null && !result.bookTitle().isBlank())
             ? result.bookTitle()
             : "Untitled_" + runId;
-        draftRunService.finalize(draft, title, storageConfig);
+        runRepository.finalize(draft, title);
 
         return new ExecuteResponse(runId);
     }
@@ -176,12 +169,7 @@ public class ExecuteService {
         Path book = requireArtifact(FileType.BOOK, request.bookRef());
         Path bookDraft = book.getParent();
 
-        Path tempDir;
-        try {
-            tempDir = Files.createTempDirectory("dazaikindle-calibration-");
-        } catch (IOException e) {
-            throw new UncheckedIOException("Failed to create temp directory for calibration generation", e);
-        }
+        Path tempDir = runRepository.createScratchDir("dazaikindle-calibration-");
         Path calibrationTemplate = tempDir.resolve("calibration.txt");
 
         AppArgs args = new AppArgs(
@@ -203,20 +191,18 @@ public class ExecuteService {
         try {
             try {
                 if (request.debugMode()) {
-                    new Pipeline(args, tempDir.resolve(RunArtifacts.DEBUG_DIR)).run();
+                    new Pipeline(args, tempDir.resolve(RunRepository.DEBUG_DIR)).run();
                 } else {
                     new Pipeline(args).run();
                 }
             } catch (Exception e) {
                 throw new PipelineExecutionException(e);
             }
-            content = Files.readAllBytes(calibrationTemplate);
-        } catch (IOException e) {
-            throw new UncheckedIOException("Failed to read generated calibration file " + calibrationTemplate, e);
+            content = runRepository.readAllBytes(calibrationTemplate);
         } finally {
-            DraftRunService.deleteRecursively(tempDir);
-            if (DraftRunService.looksLikeDraft(bookDraft)) {
-                DraftRunService.deleteRecursively(bookDraft);
+            runRepository.deleteRecursively(tempDir);
+            if (runRepository.isDraft(bookDraft)) {
+                runRepository.deleteRecursively(bookDraft);
             }
         }
 
@@ -240,13 +226,7 @@ public class ExecuteService {
         if (artifact.getParent().equals(draft)) {
             return artifact;
         }
-        Path target = draft.resolve(type.baseName() + extensionOf(artifact));
-        try {
-            Files.copy(artifact, target, StandardCopyOption.REPLACE_EXISTING);
-        } catch (IOException e) {
-            throw new UncheckedIOException("Failed to copy artifact into draft " + draft, e);
-        }
-        return target;
+        return runRepository.copyIntoDraft(artifact, draft, type.baseName() + extensionOf(artifact));
     }
 
     private String extensionOf(Path path) {
@@ -265,20 +245,13 @@ public class ExecuteService {
 
     private Optional<Path> draftFolderAmong(String... refs) {
         return Stream.of(refs)
-            .map(ref -> storageConfig.getLibraryPath().resolve(ref))
-            .filter(DraftRunService::looksLikeDraft)
+            .map(runRepository::asExistingDraft)
+            .flatMap(Optional::stream)
             .findFirst();
     }
 
     private void writeRunMetadata(Path draft, PipelineResult result) {
-        try {
-            objectMapper.writeValue(
-                draft.resolve(storageConfig.getRunJsonFileName()).toFile(),
-                new RunMetadata(result.author(), result.highlightCount())
-            );
-        } catch (IOException e) {
-            throw new UncheckedIOException("Failed to write run.json for " + draft, e);
-        }
+        runRepository.writeMetadata(draft, new RunMetadata(result.author(), result.highlightCount()));
     }
 
     private void requireNonBlank(String value, String field) {

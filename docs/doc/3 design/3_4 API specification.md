@@ -652,8 +652,10 @@
 > the pipeline before clippings are ever parsed - `run.json` is still written
 > so the run appears in the library like any other.
 >
-> `DraftRunService.finalize()` was extended (for this issue, also benefiting
-> `/execute/full`) to merge any artifact from an existing same-titled run
+> `RunRepository.finalize()` (formerly `DraftRunService.finalize()`, since folded
+> into a server-wide repository layer replacing all direct filesystem access in
+> Service classes) was extended (for this issue, also benefiting `/execute/full`)
+> to merge any artifact from an existing same-titled run
 > folder that the new draft doesn't already have of its own - e.g. running a
 > full run on a book previously used for a headings-only run keeps that run's
 > `*_headings.md` (and vice versa), while an artifact the new draft already

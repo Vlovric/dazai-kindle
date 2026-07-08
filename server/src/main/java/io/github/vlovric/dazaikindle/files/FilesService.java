@@ -1,8 +1,5 @@
 package io.github.vlovric.dazaikindle.files;
 
-import java.io.IOException;
-import java.io.UncheckedIOException;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Instant;
 import java.util.List;
@@ -12,9 +9,9 @@ import java.util.Optional;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
-import io.github.vlovric.dazaikindle.common.run.DraftRunService;
-import io.github.vlovric.dazaikindle.common.run.RunArtifacts;
-import io.github.vlovric.dazaikindle.common.storage.StorageConfig;
+import io.github.vlovric.dazaikindle.common.clippings.ClippingsRepository;
+import io.github.vlovric.dazaikindle.common.run.RunRepository;
+import io.github.vlovric.dazaikindle.common.template.TemplateRepository;
 import io.github.vlovric.dazaikindle.files.dto.FileListResponse;
 import io.github.vlovric.dazaikindle.files.dto.FileType;
 import io.github.vlovric.dazaikindle.files.dto.UploadedFileResponse;
@@ -25,12 +22,15 @@ public class FilesService {
 
     private static final int PAGE_SIZE = 12;
 
-    private final StorageConfig storageConfig;
-    private final DraftRunService draftRunService;
+    private final RunRepository runRepository;
+    private final TemplateRepository templateRepository;
+    private final ClippingsRepository clippingsRepository;
 
-    public FilesService(StorageConfig storageConfig, DraftRunService draftRunService) {
-        this.storageConfig = storageConfig;
-        this.draftRunService = draftRunService;
+    public FilesService(RunRepository runRepository, TemplateRepository templateRepository,
+                         ClippingsRepository clippingsRepository) {
+        this.runRepository = runRepository;
+        this.templateRepository = templateRepository;
+        this.clippingsRepository = clippingsRepository;
     }
 
     public UploadedFileResponse uploadBook(MultipartFile file, String draftId) {
@@ -60,7 +60,7 @@ public class FilesService {
      */
     public UploadedFileResponse uploadClippings(MultipartFile file) {
         validateExtension(file, ".txt");
-        transferTo(file, storageConfig.getClippingsFile());
+        clippingsRepository.store(file);
         return new UploadedFileResponse(file.getOriginalFilename(), Instant.now(), null);
     }
 
@@ -85,17 +85,9 @@ public class FilesService {
      * storage path - templates were never run/draft-scoped to begin with.
      */
     public Optional<Path> resolveArtifact(FileType type, String ref) {
-        if (type.isTemplate()) {
-            Path template = storageConfig.getTemplatesPath().resolve(ref);
-            return Files.isRegularFile(template) ? Optional.of(template) : Optional.empty();
-        }
-        Path asRunTitle = storageConfig.getLibraryPath().resolve(DraftRunService.sanitizeTitle(ref));
-        Optional<Path> fromRun = RunArtifacts.find(asRunTitle, type.baseName());
-        if (fromRun.isPresent()) {
-            return fromRun;
-        }
-        Path asDraft = storageConfig.getLibraryPath().resolve(ref);
-        return RunArtifacts.find(asDraft, type.baseName());
+        return type.isTemplate()
+            ? templateRepository.resolve(ref)
+            : runRepository.findArtifactByRef(ref, type.baseName());
     }
 
     private UploadedFileResponse storeIntoDraft(MultipartFile file, FileType type, String draftId) {
@@ -103,12 +95,11 @@ public class FilesService {
         validateExtension(file, type);
 
         Path draft = (draftId == null || draftId.isBlank())
-            ? draftRunService.newDraft(storageConfig)
-            : draftRunService.resolveDraft(storageConfig, draftId);
+            ? runRepository.createDraft()
+            : runRepository.resolveDraft(draftId);
 
-        RunArtifacts.find(draft, type.baseName()).ifPresent(this::deleteQuietly);
-        Path target = draft.resolve(type.baseName() + extension);
-        transferTo(file, target);
+        runRepository.findArtifact(draft, type.baseName()).ifPresent(runRepository::delete);
+        runRepository.storeArtifact(file, draft, type.baseName() + extension);
 
         return new UploadedFileResponse(file.getOriginalFilename(), Instant.now(), draft.getFileName().toString());
     }
@@ -122,8 +113,7 @@ public class FilesService {
         validateExtension(file, type);
         String safeName = sanitizedFileName(file.getOriginalFilename());
         validateTemplateNaming(safeName, type);
-        Path target = storageConfig.getTemplatesPath().resolve(safeName);
-        transferTo(file, target);
+        templateRepository.store(file, safeName);
         return new UploadedFileResponse(file.getOriginalFilename(), Instant.now(), null);
     }
 
@@ -155,32 +145,21 @@ public class FilesService {
     }
 
     private List<UploadedFileResponse> listTemplateFiles(FileType type, String search) {
-        try (var files = Files.list(storageConfig.getTemplatesPath())) {
-            return files
-                .filter(Files::isRegularFile)
-                .filter(f -> isHeadingTemplate(f) == (type == FileType.HEADING_TEMPLATE))
-                .filter(f -> matchesSearch(f, search))
-                .map(f -> new UploadedFileResponse(f.getFileName().toString(), lastModifiedOf(f), null))
-                .sorted((a, b) -> b.lastModified().compareTo(a.lastModified()))
-                .toList();
-        } catch (IOException e) {
-            throw new UncheckedIOException("Failed to list files of type " + type, e);
-        }
+        return templateRepository.listFiles().stream()
+            .filter(f -> isHeadingTemplate(f) == (type == FileType.HEADING_TEMPLATE))
+            .filter(f -> matchesSearch(f, search))
+            .map(f -> new UploadedFileResponse(f.getFileName().toString(), templateRepository.lastModified(f), null))
+            .sorted((a, b) -> b.lastModified().compareTo(a.lastModified()))
+            .toList();
     }
 
     private List<UploadedFileResponse> listRunFiles(FileType type, String search) {
-        try (var dirs = Files.list(storageConfig.getLibraryPath())) {
-            return dirs
-                .filter(Files::isDirectory)
-                .filter(dir -> !DraftRunService.looksLikeDraft(dir))
-                .filter(dir -> matchesSearch(dir, search))
-                .map(dir -> toResponse(dir, type))
-                .flatMap(Optional::stream)
-                .sorted((a, b) -> b.lastModified().compareTo(a.lastModified()))
-                .toList();
-        } catch (IOException e) {
-            throw new UncheckedIOException("Failed to list files of type " + type, e);
-        }
+        return runRepository.listRunDirs().stream()
+            .filter(dir -> matchesSearch(dir, search))
+            .map(dir -> toResponse(dir, type))
+            .flatMap(Optional::stream)
+            .sorted((a, b) -> b.lastModified().compareTo(a.lastModified()))
+            .toList();
     }
 
     /**
@@ -203,20 +182,12 @@ public class FilesService {
     }
 
     private Optional<UploadedFileResponse> toResponse(Path runDir, FileType type) {
-        return RunArtifacts.find(runDir, type.baseName())
+        return runRepository.findArtifact(runDir, type.baseName())
             .map(artifact -> new UploadedFileResponse(
                 runDir.getFileName().toString(),
-                lastModifiedOf(artifact),
+                runRepository.lastModified(artifact),
                 null
             ));
-    }
-
-    private Instant lastModifiedOf(Path path) {
-        try {
-            return Files.getLastModifiedTime(path).toInstant();
-        } catch (IOException e) {
-            throw new UncheckedIOException("Failed to read last modified time for " + path, e);
-        }
     }
 
     private void validateExtension(MultipartFile file, FileType type) {
@@ -236,21 +207,5 @@ public class FilesService {
     private String extensionOf(String filename) {
         int dot = filename == null ? -1 : filename.lastIndexOf('.');
         return dot < 0 ? "" : filename.substring(dot);
-    }
-
-    private void transferTo(MultipartFile file, Path target) {
-        try {
-            file.transferTo(target);
-        } catch (IOException e) {
-            throw new UncheckedIOException("Failed to store uploaded file at " + target, e);
-        }
-    }
-
-    private void deleteQuietly(Path path) {
-        try {
-            Files.delete(path);
-        } catch (IOException e) {
-            throw new UncheckedIOException("Failed to remove previous artifact at " + path, e);
-        }
     }
 }

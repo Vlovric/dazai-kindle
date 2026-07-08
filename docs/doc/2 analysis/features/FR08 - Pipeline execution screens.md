@@ -15,7 +15,9 @@ The user can choose the run type through the dashboard UI
 >
 > Like FR08_03, FR08_02 produces a library run folder (via the same finalize step),
 > not a download - it's the calibration generation run (FR08_01) that's the
-> exception. `DraftRunService.finalize()` now also merges over any artifact from an
+> exception. `RunRepository.finalize()` (formerly `DraftRunService.finalize()`,
+> since folded into a server-wide repository layer replacing all direct
+> filesystem access in Service classes) now also merges over any artifact from an
 > existing same-titled run folder that the new draft doesn't already have of its own
 > (e.g. a full run on a book previously used for a headings-only run keeps that run's
 > headings output, and vice versa), so switching between run types on the same book
