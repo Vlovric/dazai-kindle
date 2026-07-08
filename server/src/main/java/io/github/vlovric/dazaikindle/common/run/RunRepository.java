@@ -218,6 +218,18 @@ public class RunRepository {
         }
     }
 
+    /** Regular files directly under dir (non-recursive), or empty if dir isn't a directory. */
+    public List<Path> listFiles(Path dir) {
+        if (!Files.isDirectory(dir)) {
+            return List.of();
+        }
+        try (var entries = Files.list(dir)) {
+            return entries.filter(Files::isRegularFile).toList();
+        } catch (IOException e) {
+            throw new UncheckedIOException("Failed to list files in " + dir, e);
+        }
+    }
+
     /** Every regular file anywhere under the library path. */
     public List<Path> listAllArtifactPaths() {
         try (var files = Files.walk(storageConfig.getLibraryPath())) {

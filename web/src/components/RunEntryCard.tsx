@@ -1,3 +1,4 @@
+import { useNavigate } from "react-router-dom"
 import type { RunSummary } from "../dto/runs"
 import { formatDateTime } from "../utils/formatDate"
 
@@ -6,11 +7,15 @@ export function RunEntryCard({ run, selected, onToggle }: {
     selected: boolean
     onToggle: () => void
 }) {
+    const navigate = useNavigate()
+
     return (
-        <button
-            type="button"
-            onClick={onToggle}
-            className={`relative flex flex-col text-left border rounded-lg p-lg transition-colors ${selected
+        <div
+            role="button"
+            tabIndex={0}
+            onClick={() => navigate(`/library/${encodeURIComponent(run.name)}`)}
+            onKeyDown={(e) => e.key === "Enter" && navigate(`/library/${encodeURIComponent(run.name)}`)}
+            className={`relative flex flex-col text-left border rounded-lg p-lg transition-colors cursor-pointer ${selected
                 ? "border-primary bg-secondary-container"
                 : "border-outline-variant bg-surface-container-lowest hover:border-primary"
                 }`}
@@ -18,8 +23,9 @@ export function RunEntryCard({ run, selected, onToggle }: {
             <input
                 type="checkbox"
                 checked={selected}
-                readOnly
-                className="absolute top-md right-md w-4 h-4 accent-primary pointer-events-none"
+                onChange={onToggle}
+                onClick={(e) => e.stopPropagation()}
+                className="absolute top-md right-md w-4 h-4 accent-primary"
             />
             <h3 className="font-headline text-headline-md text-primary pr-lg break-words">{run.name}</h3>
             <p className="font-body text-body-md text-secondary">{run.author}</p>
@@ -27,6 +33,6 @@ export function RunEntryCard({ run, selected, onToggle }: {
             <p className="font-body text-label-sm text-secondary">
                 {formatDateTime(run.lastModified)}
             </p>
-        </button>
+        </div>
     )
 }

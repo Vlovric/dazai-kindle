@@ -37,6 +37,13 @@ export async function apiPost<T>(path: string, body: unknown): Promise<T>{
     return response.json()
 }
 
+export async function apiPostEmpty(path: string): Promise<void>{
+    const response = await fetch(`${BASE_URL}${path}`, { method: 'POST' });
+    if(!response.ok){
+        await throwApiError(response, `POST ${path} failed: ${response.status} ${response.statusText}`);
+    }
+}
+
 export async function apiDelete(path: string): Promise<void>{
     const response = await fetch(`${BASE_URL}${path}`, { method: 'DELETE' });
     if(!response.ok){

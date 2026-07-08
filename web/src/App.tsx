@@ -4,6 +4,7 @@ import { TopBar } from './components/TopBar'
 import { TopBarProvider } from './context/TopBarContext'
 import { Dashboard } from './pages/Dashboard'
 import { Library } from './pages/Library'
+import { BookDetail } from './pages/BookDetail'
 import { Templates } from './pages/Templates'
 import { Paths } from './pages/Paths'
 import { FullRun } from './pages/runs/FullRun'
@@ -23,6 +24,7 @@ function App() {
             <Route path="/new-run/calibration" element={<CalibrationRun />} />
             <Route path="/new-run/headings" element={<HeadingsRun />} />
             <Route path="/library" element={<Library />} />
+            <Route path="/library/:name" element={<BookDetail />} />
             <Route path="/templates" element={<Templates />} />
             <Route path="/paths" element={<Paths />} />
           </Routes>

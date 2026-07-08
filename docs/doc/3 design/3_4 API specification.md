@@ -275,6 +275,15 @@
 - - -
 ## GET /runs/{name}
 
+> **Implementation note (23 - Book library):** `artifacts` only contains the keys
+> a run actually has - e.g. a full run with nothing merged in from a prior
+> headings run has no `headingsOutput` entry at all, rather than a null one.
+> `book`/`calibration` are matched by their fixed on-disk base name; `output`/
+> `headingsOutput` aren't (their filename is derived from the book's title), so
+> those are matched by extension convention (`*_headings.md` vs any other
+> `*.md`) instead. `debugRun`'s `format` is the literal string `"folder"` (it's
+> the run's `debug/` directory, not a single typed file).
+
 | **Purpose:**          | Fetching metadata and artifact list for a single run |
 | --------------------- | ---------------------------------------------------- |
 | **Authentication:**   | `PUBLIC`                                             |
@@ -347,6 +356,45 @@
 | ------------- | ------------------------------------ |
 | **Code:**     | 404                                  |
 | **Data:**     | —                                    |
+
+- - -
+## POST /runs/{name}/artifacts/{artifact}/open
+
+> **Implementation note (23 - Book library):** not in the original design - added
+> because "open in filesystem" (per the Book detail wireframe/screen flow) can only
+> be carried out by the server, since the browser has no access to the local
+> filesystem. The server (same machine as the browser, for this tool) shells out via
+> `java.awt.Desktop` to open the artifact's **containing folder** in the OS's native
+> file browser - not the artifact itself in its default application. For `debugRun`
+> (already a directory, `debug/`) that folder is opened directly rather than its
+> parent (the run folder). Requires `java.awt.headless=false` at JVM startup -
+> Spring Boot's own default (`true`) is set before `application.properties` is even
+> read, so it has to be forced via `System.setProperty(...)` at the top of `main()`
+> instead of `spring.main.headless` in properties.
+
+| **Purpose:**          | Opening a run artifact's containing folder in the OS filesystem |
+| --------------------- | ----------------------------------------------------------------- |
+| **Authentication:**   | `PUBLIC`                                                          |
+| **Request payload:**  | —                                                                 |
+| **Response payload:** | —                                                                 |
+
+### Success response
+
+| **Code:** | 204 |
+| --------- | --- |
+| **Data:** | —   |
+
+### Error response
+
+| **Scenario:** | Run or artifact not found |
+| ------------- | -------------------------- |
+| **Code:**     | 404                        |
+| **Data:**     | —                          |
+
+| **Scenario:** | No desktop environment available, or the OS refused to open it |
+| ------------- | ---------------------------------------------------------------- |
+| **Code:**     | 500                                                               |
+| **Data:**     | Error message                                                     |
 
 - - -
 # clippings

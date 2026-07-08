@@ -13,3 +13,19 @@ export interface RunListResponse {
     totalPages: number
     currentPage: number
 }
+
+export type ArtifactKey = "book" | "calibration" | "output" | "headingsOutput" | "debugRun"
+
+export interface ArtifactSummary {
+    name: string
+    format: string
+    location: string
+}
+
+export interface RunDetail {
+    name: string
+    author: string
+    highlightCount: number
+    lastModified: string
+    artifacts: Partial<Record<ArtifactKey, ArtifactSummary>>
+}
