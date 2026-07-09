@@ -2,8 +2,6 @@
 # Working on
 
 # 1.1. High prio
-[[28 - Test suite]]
-[[29 - Repository documentation]]
 # 1.2. Medium prio
 
 # 1.3. Low prio
