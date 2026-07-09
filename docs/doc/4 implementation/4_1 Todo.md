@@ -3,9 +3,6 @@
 
 # 1.1. High prio
 # 1.2. Medium prio
-- [ ] [[23 - Book library]]
-- [ ] [[24 - Template library]]
-- [ ] [[22 - Clippings library]]
 
 # 1.3. Low prio
 - - -

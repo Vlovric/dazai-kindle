@@ -1,0 +1,1 @@
+Include the UI mode documentation in the README that goes through all the screens and what each does.

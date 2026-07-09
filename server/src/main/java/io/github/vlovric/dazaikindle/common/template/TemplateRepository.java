@@ -55,4 +55,20 @@ public class TemplateRepository {
             throw new UncheckedIOException("Failed to read last modified time for " + file, e);
         }
     }
+
+    public void delete(Path file) {
+        try {
+            Files.delete(file);
+        } catch (IOException e) {
+            throw new UncheckedIOException("Failed to delete template " + file, e);
+        }
+    }
+
+    public byte[] readAllBytes(Path file) {
+        try {
+            return Files.readAllBytes(file);
+        } catch (IOException e) {
+            throw new UncheckedIOException("Failed to read template " + file, e);
+        }
+    }
 }

@@ -63,6 +63,13 @@
 
 - - -
 # templates
+
+> **Implementation note (24 - Template library):** `DELETE /templates` and
+> `GET /templates/export` take `names` as **repeated** query params
+> (`?names=foo&names=bar`), not a single comma-joined value - same fix as
+> `DELETE /runs` / `GET /runs/export` (see the "runs" section note below), since
+> a template's name is a user-chosen filename that can itself contain a comma.
+
 ## GET /templates
 
 | **Purpose:**          | Fetching a paginated, filtered and sorted list of templates           |
@@ -115,7 +122,7 @@
 | **Purpose:**          | Deleting one or more templates from the filesystem |
 | --------------------- | -------------------------------------------------- |
 | **Authentication:**   | `PUBLIC`                                           |
-| **Request payload:**  | `?names=foo,bar`                                   |
+| **Request payload:**  | `?names=foo&names=bar`                             |
 | **Response payload:** | —                                                  |
 
 ### Success response
@@ -137,7 +144,7 @@
 | **Purpose:**          | Downloading one or more templates; returns .zip if multiple |
 | --------------------- | ----------------------------------------------------------- |
 | **Authentication:**   | `PUBLIC`                                                    |
-| **Request payload:**  | `?names=foo,bar`                                            |
+| **Request payload:**  | `?names=foo&names=bar`                                      |
 | **Response payload:** | File or .zip download                                       |
 
 ### Success response
@@ -178,6 +185,18 @@
 - - -
 ## POST /templates/preview
 
+> **Implementation note (24 - Template library, second screen):** the request
+> doesn't say whether `content` is an output or a heading template, so the
+> example context exposes **both** view-models every render - `title`/`groups`
+> (what an output template references) and `title`/`headings` (what a heading
+> template references) - built from one fixed hardcoded example entry. A
+> template only ever reads the variables it cares about, so the unused ones
+> are harmless. Rendered with a `freemarker.cache.StringTemplateLoader`
+> (in-memory), reusing the same `TemplateGroup`/`TemplateClipping`/
+> `TemplateHeading` view-model classes core's `TemplateRenderer` already
+> builds from parsed clippings - this is the only place a template is rendered
+> from a content string rather than a file on disk.
+
 | **Purpose:**          | Rendering template content using example entries |
 | --------------------- | ------------------------------------------------ |
 | **Authentication:**   | `PUBLIC`                                         |
@@ -199,6 +218,14 @@
 
 - - -
 # runs
+
+> **Implementation note (23 - Book library):** `DELETE /runs` and `GET /runs/export`
+> take `names` as **repeated** query params (`?names=Dazai&names=Kafka`), not a single
+> comma-joined value. A run's name is a book title, which can itself contain a comma
+> (e.g. "80,000 Hours") - comma-joining would make that indistinguishable from the
+> delimiter. `?names=book,calibration`-style params elsewhere (artifact base names on
+> `/runs/{name}/*`) are unaffected, since those values are a fixed, comma-free set.
+
 ## GET /runs
 
 | **Purpose:**          | Fetching a paginated, sorted and searchable list of past runs                        |
@@ -226,7 +253,7 @@
 | **Purpose:**          | Deleting one or more runs and all their artifacts from the filesystem |
 | --------------------- | --------------------------------------------------------------------- |
 | **Authentication:**   | `PUBLIC`                                                              |
-| **Request payload:**  | `?names=Dazai,Kafka`                                                  |
+| **Request payload:**  | `?names=Dazai&names=Kafka`                                            |
 | **Response payload:** | —                                                                     |
 
 ### Success response
@@ -248,7 +275,7 @@
 | **Purpose:**          | Downloading one or more runs as a .zip            |
 | --------------------- | ------------------------------------------------- |
 | **Authentication:**   | `PUBLIC`                                          |
-| **Request payload:**  | `?names=Dazai,Kafka`                              |
+| **Request payload:**  | `?names=Dazai&names=Kafka`                        |
 | **Response payload:** | .zip file download                                |
 
 ### Success response
@@ -266,6 +293,15 @@
 
 - - -
 ## GET /runs/{name}
+
+> **Implementation note (23 - Book library):** `artifacts` only contains the keys
+> a run actually has - e.g. a full run with nothing merged in from a prior
+> headings run has no `headingsOutput` entry at all, rather than a null one.
+> `book`/`calibration` are matched by their fixed on-disk base name; `output`/
+> `headingsOutput` aren't (their filename is derived from the book's title), so
+> those are matched by extension convention (`*_headings.md` vs any other
+> `*.md`) instead. `debugRun`'s `format` is the literal string `"folder"` (it's
+> the run's `debug/` directory, not a single typed file).
 
 | **Purpose:**          | Fetching metadata and artifact list for a single run |
 | --------------------- | ---------------------------------------------------- |
@@ -341,6 +377,45 @@
 | **Data:**     | —                                    |
 
 - - -
+## POST /runs/{name}/artifacts/{artifact}/open
+
+> **Implementation note (23 - Book library):** not in the original design - added
+> because "open in filesystem" (per the Book detail wireframe/screen flow) can only
+> be carried out by the server, since the browser has no access to the local
+> filesystem. The server (same machine as the browser, for this tool) shells out via
+> `java.awt.Desktop` to open the artifact's **containing folder** in the OS's native
+> file browser - not the artifact itself in its default application. For `debugRun`
+> (already a directory, `debug/`) that folder is opened directly rather than its
+> parent (the run folder). Requires `java.awt.headless=false` at JVM startup -
+> Spring Boot's own default (`true`) is set before `application.properties` is even
+> read, so it has to be forced via `System.setProperty(...)` at the top of `main()`
+> instead of `spring.main.headless` in properties.
+
+| **Purpose:**          | Opening a run artifact's containing folder in the OS filesystem |
+| --------------------- | ----------------------------------------------------------------- |
+| **Authentication:**   | `PUBLIC`                                                          |
+| **Request payload:**  | —                                                                 |
+| **Response payload:** | —                                                                 |
+
+### Success response
+
+| **Code:** | 204 |
+| --------- | --- |
+| **Data:** | —   |
+
+### Error response
+
+| **Scenario:** | Run or artifact not found |
+| ------------- | -------------------------- |
+| **Code:**     | 404                        |
+| **Data:**     | —                          |
+
+| **Scenario:** | No desktop environment available, or the OS refused to open it |
+| ------------- | ---------------------------------------------------------------- |
+| **Code:**     | 500                                                               |
+| **Data:**     | Error message                                                     |
+
+- - -
 # clippings
 ## GET /clippings
 
@@ -363,6 +438,38 @@
 | **Code:**     | 404                            |
 | **Data:**     | —                              |
 
+- - -
+## POST /clippings/open
+
+> **Implementation note (22 - Clippings library):** not in the original design -
+> added for the same reason as `POST /runs/{name}/artifacts/{artifact}/open` (see
+> that endpoint's note): the browser can't reach the local filesystem, so the
+> server opens the clippings file's **containing folder** in the OS's native file
+> browser via `java.awt.Desktop`, rather than the file itself.
+
+| **Purpose:**          | Opening the clippings file's containing folder in the OS filesystem |
+| --------------------- | --------------------------------------------------------------------- |
+| **Authentication:**   | `PUBLIC`                                                              |
+| **Request payload:**  | —                                                                     |
+| **Response payload:** | —                                                                     |
+
+### Success response
+
+| **Code:** | 204 |
+| --------- | --- |
+| **Data:** | —   |
+
+### Error response
+
+| **Scenario:** | No clippings file uploaded yet |
+| ------------- | ------------------------------- |
+| **Code:**     | 404                              |
+| **Data:**     | —                                |
+
+| **Scenario:** | No desktop environment available, or the OS refused to open it |
+| ------------- | ---------------------------------------------------------------- |
+| **Code:**     | 500                                                               |
+| **Data:**     | Error message                                                     |
 
 - - -
 # files
