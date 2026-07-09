@@ -1,4 +1,8 @@
-const BASE_URL = 'http://localhost:8080/api';
+// Relative on purpose: in production the built frontend is served by the same
+// Spring Boot jar that exposes the API, so same-origin "/api" always resolves
+// correctly regardless of host/port. In dev, Vite's proxy (see vite.config.ts)
+// forwards "/api" to the backend running on localhost:8080.
+const BASE_URL = '/api';
 
 async function throwApiError(response: Response, fallback: string): Promise<never> {
     const body = await response.json().catch(() => null);
